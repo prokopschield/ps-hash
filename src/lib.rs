@@ -52,7 +52,8 @@ pub fn hash(data: &[u8]) -> String {
 
     vec.extend_from_slice(&xored);
     vec.extend_from_slice(&checksum);
-    vec.extend_from_slice(&length.to_le_bytes());
+    vec.push(length as u8);
+    vec.push((length >> 4) as u8);
 
     let mut encoded = ps_base64::encode(&vec);
 
@@ -68,7 +69,7 @@ pub fn verify_hash_integrity(hash: &[u8]) -> bool {
 
     let bytes = ps_base64::decode(hash);
     let xored = &bytes[0..32];
-    let length = bytes[36] as u32 + ((bytes[37] as u32) << 8);
+    let length = bytes[36] as u32 + ((bytes[37] as u32) << 4);
     let checksum = checksum(xored, length);
 
     checksum == bytes[32..36]
