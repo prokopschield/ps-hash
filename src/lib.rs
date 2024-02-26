@@ -41,12 +41,20 @@ pub fn checksum(data: &[u8], length: u32) -> [u8; 4] {
     checksum_u32(data, length).to_le_bytes()
 }
 
-pub fn hash(data: &[u8]) -> String {
+pub type HashParts = ([u8; 32], [u8; 4], u16);
+
+pub fn hash_to_parts(data: &[u8]) -> HashParts {
     let length: u16 = data.len() as u16;
     let shasum = sha256(data);
     let blasum = blake3(data);
     let xored = xor(shasum, blasum);
     let checksum = checksum(&xored, length as u32);
+
+    return (xored, checksum, length);
+}
+
+pub fn encode_parts(parts: HashParts) -> String {
+    let (xored, checksum, length) = parts;
 
     let mut vec: Vec<u8> = Vec::with_capacity(38);
 
@@ -60,6 +68,10 @@ pub fn hash(data: &[u8]) -> String {
     encoded.truncate(50);
 
     return encoded;
+}
+
+pub fn hash(data: &[u8]) -> String {
+    encode_parts(hash_to_parts(data))
 }
 
 pub fn verify_hash_integrity(hash: &[u8]) -> bool {
