@@ -74,15 +74,31 @@ pub fn hash(data: &[u8]) -> String {
     encode_parts(hash_to_parts(data))
 }
 
-pub fn verify_hash_integrity(hash: &[u8]) -> bool {
-    if hash.len() != 50 {
-        return false;
+pub fn decode_parts(hash: &[u8]) -> Result<HashParts, ()> {
+    if hash.len() < 50 {
+        return Err(());
     }
 
     let bytes = ps_base64::decode(hash);
-    let xored = &bytes[0..32];
-    let length = bytes[36] as u32 + ((bytes[37] as u32) << 4);
-    let checksum = checksum(xored, length);
 
-    checksum == bytes[32..36]
+    return Ok((
+        bytes[0..32].try_into().map_err(|_| ())?,
+        bytes[32..36].try_into().map_err(|_| ())?,
+        bytes[36] as u16 + ((bytes[37] as u16) << 4),
+    ));
+}
+
+pub fn verify_hash_integrity(hash: &[u8]) -> bool {
+    let parts = match decode_parts(hash) {
+        Ok(parts) => parts,
+        Err(_) => return false,
+    };
+
+    for i in 0..4 {
+        if parts.1 == checksum(&parts.0, parts.2 as u32 + i << 12) {
+            return true;
+        }
+    }
+
+    false
 }
