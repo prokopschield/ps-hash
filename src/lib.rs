@@ -1,3 +1,7 @@
+mod error;
+
+pub use error::PsHashError;
+
 use sha2::{Digest, Sha256};
 
 pub fn sha256(data: &[u8]) -> [u8; 32] {
@@ -74,16 +78,16 @@ pub fn hash(data: &[u8]) -> String {
     encode_parts(hash_to_parts(data))
 }
 
-pub fn decode_parts(hash: &[u8]) -> Result<HashParts, ()> {
+pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
     if hash.len() < 50 {
-        return Err(());
+        return Err(PsHashError::InputTooShort);
     }
 
     let bytes = ps_base64::decode(hash);
 
     return Ok((
-        bytes[0..32].try_into().map_err(|_| ())?,
-        bytes[32..36].try_into().map_err(|_| ())?,
+        bytes[0..32].try_into()?,
+        bytes[32..36].try_into()?,
         bytes[36] as u16 + ((bytes[37] as u16) << 4),
     ));
 }
