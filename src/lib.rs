@@ -57,7 +57,57 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
     return (xored, checksum, length);
 }
 
-pub fn encode_parts(parts: HashParts) -> String {
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Hash {
+    inner: [u8; 50],
+}
+
+impl Into<[u8; 50]> for Hash {
+    fn into(self) -> [u8; 50] {
+        self.inner
+    }
+}
+
+impl Into<String> for &Hash {
+    fn into(self) -> String {
+        self.to_string()
+    }
+}
+
+impl Into<Vec<u8>> for &Hash {
+    fn into(self) -> Vec<u8> {
+        self.to_vec()
+    }
+}
+
+impl Hash {
+    pub fn as_slice(&self) -> &[u8; 50] {
+        &self.inner
+    }
+
+    pub fn as_bytes(&self) -> &[u8; 50] {
+        &self.inner
+    }
+
+    pub fn as_str(&self) -> &str {
+        unsafe { std::str::from_utf8_unchecked(&self.inner) }
+    }
+
+    pub fn to_string(&self) -> String {
+        unsafe { String::from_utf8_unchecked(self.inner.to_vec()) }
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        self.inner.to_vec()
+    }
+
+    pub fn hash(data: &[u8]) -> Self {
+        encode_parts(hash_to_parts(data))
+    }
+}
+
+pub fn encode_parts(parts: HashParts) -> Hash {
     let (xored, checksum, length) = parts;
 
     let mut vec: Vec<u8> = Vec::with_capacity(38);
@@ -67,14 +117,12 @@ pub fn encode_parts(parts: HashParts) -> String {
     vec.push(length as u8);
     vec.push((length >> 4) as u8);
 
-    let mut encoded = ps_base64::encode(&vec);
-
-    encoded.truncate(50);
-
-    return encoded;
+    return Hash {
+        inner: ps_base64::sized_encode::<50>(&vec),
+    };
 }
 
-pub fn hash(data: &[u8]) -> String {
+pub fn hash(data: &[u8]) -> Hash {
     encode_parts(hash_to_parts(data))
 }
 
@@ -113,7 +161,7 @@ mod tests {
     pub fn hash() {
         let test_str = b"Hello, world!";
         let test_value = test_str.as_slice();
-        let hash_value = super::hash(test_value);
+        let hash_value = super::hash(test_value).to_string();
 
         assert_eq!(
             "3Lqbann~vFOn43UpL64ukdU4TlKXU4nFFvUZCL1iFF5E1IlNDQ",
