@@ -1,6 +1,10 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+use thiserror::Error;
+
+#[derive(Error, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PsHashError {
+    #[error("The input was too short and could not be decoded.")]
     InputTooShort,
+    #[error("Reading from a slice failed.")]
     TryFromSliceError,
 }
 
