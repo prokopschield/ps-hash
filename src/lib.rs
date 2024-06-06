@@ -106,6 +106,16 @@ impl Hash {
     pub fn hash(data: &[u8]) -> Self {
         encode_parts(hash_to_parts(data))
     }
+
+    /// This should tell you how large a vector to allocate if you want to copy the hashed data.
+    pub fn data_max_len(&self) -> Result<usize, PsHashError> {
+        let bits = &self.inner[48..50];
+        let bits = ps_base64::decode(bits);
+        let bits = bits[0..2].try_into()?;
+        let size = PackedInt::from_12_bits(bits).to_usize();
+
+        Ok(size)
+    }
 }
 
 pub fn encode_parts(parts: HashParts) -> Hash {
