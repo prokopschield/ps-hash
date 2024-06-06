@@ -1,6 +1,6 @@
 [package]
 name = "ps-hash"
-version = "0.1.0-6"
+version = "0.1.0-7"
 description = "Generates 50-byte hashes with 256 bits of security."
 license = "GPL-3.0-or-later"
 edition = "2021"
