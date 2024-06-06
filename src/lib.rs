@@ -2,6 +2,7 @@ mod error;
 
 pub use error::PsHashError;
 
+use ps_pint16::PackedInt;
 use sha2::{Digest, Sha256};
 
 pub fn sha256(data: &[u8]) -> [u8; 32] {
@@ -45,16 +46,16 @@ pub fn checksum(data: &[u8], length: u32) -> [u8; 4] {
     checksum_u32(data, length).to_le_bytes()
 }
 
-pub type HashParts = ([u8; 32], [u8; 4], u16);
+pub type HashParts = ([u8; 32], [u8; 4], PackedInt);
 
 pub fn hash_to_parts(data: &[u8]) -> HashParts {
-    let length: u16 = data.len() as u16;
+    let length = data.len();
     let shasum = sha256(data);
     let blasum = blake3(data);
     let xored = xor(shasum, blasum);
     let checksum = checksum(&xored, length as u32);
 
-    return (xored, checksum, length);
+    return (xored, checksum, PackedInt::from_usize(length));
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -114,8 +115,7 @@ pub fn encode_parts(parts: HashParts) -> Hash {
 
     vec.extend_from_slice(&xored);
     vec.extend_from_slice(&checksum);
-    vec.push(length as u8);
-    vec.push((length >> 4) as u8);
+    vec.extend_from_slice(&length.to_12_bits());
 
     return Hash {
         inner: ps_base64::sized_encode::<50>(&vec),
@@ -136,7 +136,7 @@ pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
     return Ok((
         bytes[0..32].try_into()?,
         bytes[32..36].try_into()?,
-        bytes[36] as u16 + ((bytes[37] as u16) << 4),
+        PackedInt::from_12_bits(&bytes[36..38].try_into()?),
     ));
 }
 
@@ -147,7 +147,7 @@ pub fn verify_hash_integrity(hash: &[u8]) -> bool {
     };
 
     for i in 0..4 {
-        if parts.1 == checksum(&parts.0, parts.2 as u32 + i << 12) {
+        if parts.1 == checksum(&parts.0, parts.2.to_u32() + i << 12) {
             return true;
         }
     }
@@ -157,6 +157,8 @@ pub fn verify_hash_integrity(hash: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use ps_pint16::PackedInt;
+
     #[test]
     pub fn hash() {
         let test_str = b"Hello, world!";
@@ -170,7 +172,7 @@ mod tests {
 
         let parts = super::decode_parts(hash_value.as_bytes()).unwrap();
 
-        assert_eq!(parts.2, test_value.len() as u16);
+        assert_eq!(parts.2.to_usize(), test_value.len());
     }
 
     #[test]
@@ -180,7 +182,12 @@ mod tests {
             let hash = super::hash(input.as_slice());
             let (_, _, length) = super::decode_parts(hash.as_bytes()).unwrap();
 
-            assert_eq!(input_length % 4096, length as usize, "{}", input_length);
+            assert_eq!(
+                PackedInt::from_usize(input_length),
+                length,
+                "{}",
+                input_length
+            );
         }
     }
 }
