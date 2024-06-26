@@ -1,7 +1,5 @@
 mod error;
-
 pub use error::PsHashError;
-
 use ps_pint16::PackedInt;
 use sha2::{Digest, Sha256};
 
