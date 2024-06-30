@@ -56,6 +56,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
     return (xored, checksum, PackedInt::from_usize(length));
 }
 
+/// a 50-byte ascii string representing a Hash
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Hash {
@@ -143,11 +144,17 @@ impl Hash {
     }
 
     pub fn as_str(&self) -> &str {
-        unsafe { std::str::from_utf8_unchecked(&self.inner) }
+        unsafe {
+            // safe because Hash is guaranteed to be valid ASCII
+            std::str::from_utf8_unchecked(&self.inner)
+        }
     }
 
     pub fn to_string(&self) -> String {
-        unsafe { String::from_utf8_unchecked(self.inner.to_vec()) }
+        unsafe {
+            // safe because Hash is guaranteed to be valid ASCII
+            String::from_utf8_unchecked(self.inner.to_vec())
+        }
     }
 
     pub fn to_vec(&self) -> Vec<u8> {
