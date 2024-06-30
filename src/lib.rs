@@ -58,7 +58,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
 }
 
 /// a 50-byte ascii string representing a Hash
-#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Hash {
     inner: [u8; 50],
@@ -81,6 +81,19 @@ impl std::fmt::Debug for Hash {
         }
 
         Ok(())
+    }
+}
+
+impl core::hash::Hash for Hash {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match decode_parts(&self.inner) {
+            Ok((hash, checksum, length)) => {
+                state.write(&hash);
+                state.write(&checksum);
+                state.write_u16(length.to_inner_u16());
+            }
+            Err(_) => state.write(&self.inner),
+        }
     }
 }
 
