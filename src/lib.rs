@@ -2,6 +2,7 @@ mod error;
 pub use error::PsHashError;
 use ps_pint16::PackedInt;
 use sha2::{Digest, Sha256};
+use std::fmt::Write;
 
 pub fn sha256(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
@@ -57,7 +58,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
 }
 
 /// a 50-byte ascii string representing a Hash
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Hash {
     inner: [u8; 50],
@@ -66,6 +67,20 @@ pub struct Hash {
 impl std::fmt::Display for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+impl std::fmt::Debug for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for &b in &self.inner {
+            if validate_hash_char(b) {
+                f.write_char(b as char)
+            } else {
+                f.write_str(&format!("<0x{:02X?}>", b))
+            }?;
+        }
+
+        Ok(())
     }
 }
 
