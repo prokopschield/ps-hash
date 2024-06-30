@@ -62,21 +62,21 @@ pub struct Hash {
     inner: [u8; 50],
 }
 
-impl Into<[u8; 50]> for Hash {
-    fn into(self) -> [u8; 50] {
-        self.inner
+impl From<Hash> for [u8; 50] {
+    fn from(hash: Hash) -> [u8; 50] {
+        hash.inner
     }
 }
 
-impl Into<String> for &Hash {
-    fn into(self) -> String {
-        self.to_string()
+impl From<&Hash> for String {
+    fn from(hash: &Hash) -> String {
+        hash.to_string()
     }
 }
 
-impl Into<Vec<u8>> for &Hash {
-    fn into(self) -> Vec<u8> {
-        self.to_vec()
+impl From<&Hash> for Vec<u8> {
+    fn from(hash: &Hash) -> Vec<u8> {
+        hash.to_vec()
     }
 }
 
