@@ -58,7 +58,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
 }
 
 /// a 50-byte ascii string representing a Hash
-#[derive(Clone, Copy, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Eq)]
 #[repr(transparent)]
 pub struct Hash {
     inner: [u8; 50],
@@ -110,6 +110,28 @@ impl PartialEq for Hash {
         };
 
         left.0 == right.0 && left.1 == right.1 && left.2 == right.2
+    }
+}
+
+impl Ord for Hash {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let left = match decode_parts(&self.inner) {
+            Ok(left) => left,
+            Err(_) => return self.inner.cmp(&other.inner),
+        };
+
+        let right = match decode_parts(&other.inner) {
+            Ok(right) => right,
+            Err(_) => return self.inner.cmp(&other.inner),
+        };
+
+        return left.0.cmp(&right.0);
+    }
+}
+
+impl PartialOrd for Hash {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
