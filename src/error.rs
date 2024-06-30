@@ -6,6 +6,10 @@ pub enum PsHashError {
     InputTooShort,
     #[error("Reading from a slice failed.")]
     TryFromSliceError,
+    #[error("When converting &[u8] to Hash: incorrect length")]
+    BadInputLength,
+    #[error("When converting &[u8] to Hash: invalid byte")]
+    BadInputByte,
 }
 
 impl From<std::array::TryFromSliceError> for PsHashError {
