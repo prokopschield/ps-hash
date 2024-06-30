@@ -58,7 +58,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
 }
 
 /// a 50-byte ascii string representing a Hash
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Eq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Hash {
     inner: [u8; 50],
@@ -94,6 +94,22 @@ impl core::hash::Hash for Hash {
             }
             Err(_) => state.write(&self.inner),
         }
+    }
+}
+
+impl PartialEq for Hash {
+    fn eq(&self, other: &Self) -> bool {
+        let left = match decode_parts(&self.inner) {
+            Ok(parts) => parts,
+            Err(_) => return self.inner == other.inner,
+        };
+
+        let right = match decode_parts(&other.inner) {
+            Ok(parts) => parts,
+            Err(_) => return false,
+        };
+
+        left.0 == right.0 && left.1 == right.1 && left.2 == right.2
     }
 }
 
