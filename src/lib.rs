@@ -63,6 +63,12 @@ pub struct Hash {
     inner: [u8; 50],
 }
 
+impl std::fmt::Display for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 impl From<Hash> for [u8; 50] {
     fn from(hash: Hash) -> [u8; 50] {
         hash.inner
