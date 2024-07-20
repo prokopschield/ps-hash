@@ -97,6 +97,70 @@ impl core::hash::Hash for Hash {
     }
 }
 
+impl std::ops::Deref for Hash {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_str()
+    }
+}
+
+impl std::ops::Index<usize> for Hash {
+    type Output = u8;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        if index < self.inner.len() {
+            &self.inner[index]
+        } else {
+            &0
+        }
+    }
+}
+
+impl std::ops::Index<std::ops::Range<usize>> for Hash {
+    type Output = str;
+
+    fn index(&self, index: std::ops::Range<usize>) -> &Self::Output {
+        let start = std::cmp::min(index.start, self.inner.len());
+        let end = std::cmp::min(index.end, self.inner.len());
+        let range = start..end;
+
+        &self.as_str()[range]
+    }
+}
+
+impl std::ops::Index<std::ops::RangeFrom<usize>> for Hash {
+    type Output = str;
+
+    fn index(&self, index: std::ops::RangeFrom<usize>) -> &Self::Output {
+        self.index(index.start..50)
+    }
+}
+
+impl std::ops::Index<std::ops::RangeTo<usize>> for Hash {
+    type Output = str;
+
+    fn index(&self, index: std::ops::RangeTo<usize>) -> &Self::Output {
+        self.index(0..index.end)
+    }
+}
+
+impl std::ops::Index<std::ops::RangeToInclusive<usize>> for Hash {
+    type Output = str;
+
+    fn index(&self, index: std::ops::RangeToInclusive<usize>) -> &Self::Output {
+        self.index(0..index.end + 1)
+    }
+}
+
+impl std::ops::Index<std::ops::RangeFull> for Hash {
+    type Output = str;
+
+    fn index(&self, _: std::ops::RangeFull) -> &Self::Output {
+        return self.as_str();
+    }
+}
+
 impl PartialEq for Hash {
     fn eq(&self, other: &Self) -> bool {
         let left = match decode_parts(&self.inner) {
