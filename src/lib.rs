@@ -4,7 +4,10 @@ use ps_pint16::PackedInt;
 use sha2::{Digest, Sha256};
 use std::fmt::Write;
 
-pub fn sha256(data: &[u8]) -> [u8; 32] {
+pub const HASH_SIZE_BIN: usize = 32;
+pub const HASH_SIZE: usize = 50;
+
+pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     let mut hasher = Sha256::new();
 
     hasher.update(data);
@@ -14,14 +17,14 @@ pub fn sha256(data: &[u8]) -> [u8; 32] {
     return result.into();
 }
 
-pub fn blake3(data: &[u8]) -> [u8; 32] {
+pub fn blake3(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     return *blake3::hash(data).as_bytes();
 }
 
-pub fn xor(a: [u8; 32], b: [u8; 32]) -> [u8; 32] {
-    let mut result = [0; 32];
+pub fn xor(a: [u8; HASH_SIZE_BIN], b: [u8; HASH_SIZE_BIN]) -> [u8; HASH_SIZE_BIN] {
+    let mut result = [0; HASH_SIZE_BIN];
 
-    for i in 0..32 {
+    for i in 0..HASH_SIZE_BIN {
         result[i] = a[i] ^ b[i];
     }
 
@@ -45,7 +48,7 @@ pub fn checksum(data: &[u8], length: u32) -> [u8; 4] {
     checksum_u32(data, length).to_le_bytes()
 }
 
-pub type HashParts = ([u8; 32], [u8; 4], PackedInt);
+pub type HashParts = ([u8; HASH_SIZE_BIN], [u8; 4], PackedInt);
 
 pub fn hash_to_parts(data: &[u8]) -> HashParts {
     let length = data.len();
@@ -61,7 +64,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
 #[derive(Clone, Copy, Eq)]
 #[repr(transparent)]
 pub struct Hash {
-    inner: [u8; 50],
+    inner: [u8; HASH_SIZE],
 }
 
 impl std::fmt::Display for Hash {
@@ -133,7 +136,7 @@ impl std::ops::Index<std::ops::RangeFrom<usize>> for Hash {
     type Output = str;
 
     fn index(&self, index: std::ops::RangeFrom<usize>) -> &Self::Output {
-        self.index(index.start..50)
+        self.index(index.start..HASH_SIZE)
     }
 }
 
@@ -199,8 +202,8 @@ impl PartialOrd for Hash {
     }
 }
 
-impl From<Hash> for [u8; 50] {
-    fn from(hash: Hash) -> [u8; 50] {
+impl From<Hash> for [u8; HASH_SIZE] {
+    fn from(hash: Hash) -> [u8; HASH_SIZE] {
         hash.inner
     }
 }
@@ -232,7 +235,7 @@ pub fn validate_hash_str_bytes(str: &[u8]) -> bool {
 #[inline]
 /// validates that a byte slice could be a valid hash
 pub fn validate_hash_str(str: &[u8]) -> Result<&str, PsHashError> {
-    if str.len() != 50 {
+    if str.len() != HASH_SIZE {
         return Err(PsHashError::BadInputLength);
     }
 
@@ -271,11 +274,11 @@ impl TryFrom<&str> for Hash {
 }
 
 impl Hash {
-    pub fn as_slice(&self) -> &[u8; 50] {
+    pub fn as_slice(&self) -> &[u8; HASH_SIZE] {
         &self.inner
     }
 
-    pub fn as_bytes(&self) -> &[u8; 50] {
+    pub fn as_bytes(&self) -> &[u8; HASH_SIZE] {
         &self.inner
     }
 
@@ -303,7 +306,7 @@ impl Hash {
 
     /// This should tell you how large a vector to allocate if you want to copy the hashed data.
     pub fn data_max_len(&self) -> Result<usize, PsHashError> {
-        let bits = &self.inner[48..50];
+        let bits = &self.inner[48..HASH_SIZE];
         let bits = ps_base64::decode(bits);
         let bits = bits[0..2].try_into()?;
         let size = PackedInt::from_12_bits(bits).to_usize();
@@ -322,7 +325,7 @@ pub fn encode_parts(parts: HashParts) -> Hash {
     vec.extend_from_slice(&length.to_12_bits());
 
     return Hash {
-        inner: ps_base64::sized_encode::<50>(&vec),
+        inner: ps_base64::sized_encode::<HASH_SIZE>(&vec),
     };
 }
 
@@ -331,15 +334,15 @@ pub fn hash(data: &[u8]) -> Hash {
 }
 
 pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
-    if hash.len() < 50 {
+    if hash.len() < HASH_SIZE {
         return Err(PsHashError::InputTooShort);
     }
 
     let bytes = ps_base64::decode(hash);
 
     return Ok((
-        bytes[0..32].try_into()?,
-        bytes[32..36].try_into()?,
+        bytes[0..HASH_SIZE_BIN].try_into()?,
+        bytes[HASH_SIZE_BIN..36].try_into()?,
         PackedInt::from_12_bits(&bytes[36..38].try_into()?),
     ));
 }
