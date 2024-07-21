@@ -21,10 +21,11 @@ pub fn blake3(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     return *blake3::hash(data).as_bytes();
 }
 
-pub fn xor(a: [u8; HASH_SIZE_BIN], b: [u8; HASH_SIZE_BIN]) -> [u8; HASH_SIZE_BIN] {
-    let mut result = [0; HASH_SIZE_BIN];
+#[inline(always)]
+pub fn xor<const S: usize>(a: [u8; S], b: [u8; S]) -> [u8; S] {
+    let mut result = [0; S];
 
-    for i in 0..HASH_SIZE_BIN {
+    for i in 0..S {
         result[i] = a[i] ^ b[i];
     }
 
