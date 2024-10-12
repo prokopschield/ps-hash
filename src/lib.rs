@@ -290,10 +290,6 @@ impl TryFrom<&str> for Hash {
 }
 
 impl Hash {
-    pub fn as_slice(&self) -> &[u8; HASH_SIZE] {
-        &self.inner
-    }
-
     pub fn as_bytes(&self) -> &[u8; HASH_SIZE] {
         &self.inner
     }
