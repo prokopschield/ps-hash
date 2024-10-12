@@ -17,7 +17,7 @@ pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
 
     let result = hasher.finalize();
 
-    return result.into();
+    result.into()
 }
 
 pub fn blake3(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
@@ -32,7 +32,7 @@ pub fn xor<const S: usize>(a: [u8; S], b: [u8; S]) -> [u8; S] {
         result[i] = a[i] ^ b[i];
     }
 
-    return result;
+    result
 }
 
 pub fn checksum_u32(data: &[u8], length: u32) -> u32 {
@@ -45,7 +45,7 @@ pub fn checksum_u32(data: &[u8], length: u32) -> u32 {
             .wrapping_sub(hash);
     }
 
-    return hash;
+    hash
 }
 
 pub fn checksum(data: &[u8], length: u32) -> [u8; 4] {
@@ -61,7 +61,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
     let xored = xor(shasum, blasum);
     let checksum = checksum(&xored, length as u32);
 
-    return (xored, checksum, PackedInt::from_usize(length));
+    (xored, checksum, PackedInt::from_usize(length))
 }
 
 /// a 50-byte ascii string representing a Hash
@@ -208,7 +208,7 @@ impl Ord for Hash {
             Err(_) => return self.inner.cmp(&other.inner),
         };
 
-        return left.0.cmp(&right.0);
+        left.0.cmp(&right.0)
     }
 }
 
@@ -340,9 +340,9 @@ pub fn encode_parts(parts: HashParts) -> Hash {
     vec.extend_from_slice(&checksum);
     vec.extend_from_slice(&length.to_12_bits());
 
-    return Hash {
+    Hash {
         inner: ps_base64::sized_encode::<HASH_SIZE>(&vec),
-    };
+    }
 }
 
 pub fn hash(data: &[u8]) -> Hash {
@@ -356,11 +356,11 @@ pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
 
     let bytes = ps_base64::decode(hash);
 
-    return Ok((
+    Ok((
         bytes[0..HASH_SIZE_BIN].try_into()?,
         bytes[HASH_SIZE_BIN..36].try_into()?,
         PackedInt::from_12_bits(&bytes[36..38].try_into()?),
-    ));
+    ))
 }
 
 pub fn verify_hash_integrity(hash: &[u8]) -> bool {
@@ -370,7 +370,7 @@ pub fn verify_hash_integrity(hash: &[u8]) -> bool {
     };
 
     for i in 0..4 {
-        if parts.1 == checksum(&parts.0, parts.2.to_u32() + i << 12) {
+        if parts.1 == checksum(&parts.0, (parts.2.to_u32() + i) << 12) {
             return true;
         }
     }
