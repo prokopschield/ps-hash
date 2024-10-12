@@ -309,10 +309,6 @@ impl Hash {
         self.inner.to_vec()
     }
 
-    pub fn hash(data: &[u8]) -> Self {
-        encode_parts(hash_to_parts(data))
-    }
-
     /// This should tell you how large a vector to allocate if you want to copy the hashed data.
     pub fn data_max_len(&self) -> Result<usize, PsHashError> {
         let bits = &self.inner[48..HASH_SIZE];
