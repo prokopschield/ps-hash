@@ -305,13 +305,6 @@ impl Hash {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        unsafe {
-            // safe because Hash is guaranteed to be valid ASCII
-            String::from_utf8_unchecked(self.inner.to_vec())
-        }
-    }
-
     pub fn to_vec(&self) -> Vec<u8> {
         self.inner.to_vec()
     }
