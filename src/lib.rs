@@ -180,6 +180,14 @@ impl std::ops::Index<std::ops::RangeFull> for Hash {
     }
 }
 
+impl std::ops::Index<std::ops::RangeInclusive<usize>> for Hash {
+    type Output = str;
+
+    fn index(&self, index: std::ops::RangeInclusive<usize>) -> &Self::Output {
+        self.index(0..index.end() + 1)
+    }
+}
+
 impl PartialEq for Hash {
     fn eq(&self, other: &Self) -> bool {
         let left = match decode_parts(&self.inner) {
