@@ -124,7 +124,7 @@ impl std::fmt::Display for Hash {
 impl std::fmt::Debug for Hash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for &b in &self.inner {
-            if validate_hash_char(b) {
+            if b.is_ascii_graphic() {
                 f.write_char(b as char)
             } else {
                 f.write_str(&format!("<0x{b:02X?}>"))
@@ -276,55 +276,16 @@ impl From<&Hash> for Vec<u8> {
     }
 }
 
-#[inline(always)]
-/// validates that a byte is non-whitespace printable ascii
-#[must_use]
-pub const fn validate_hash_char(b: u8) -> bool {
-    b > 0x20 && b < 0x7F
-}
-
-#[inline]
-/// validates that a byte slice contains only non-whitespace printable ascii
-#[must_use]
-pub fn validate_hash_str_bytes(str: &[u8]) -> bool {
-    str.iter().all(|&b| validate_hash_char(b))
-}
-
-#[inline]
-/// validates that a byte slice could be a valid hash
-pub fn validate_hash_str(str: &[u8]) -> Result<&str, PsHashError> {
-    if str.len() != HASH_SIZE {
-        return Err(PsHashError::BadInputLength);
-    }
-
-    if !validate_hash_str_bytes(str) {
-        return Err(PsHashError::BadInputByte);
-    }
-
-    let validated = unsafe {
-        // safe bacause str is checked to be valid ascii
-        std::str::from_utf8_unchecked(str)
-    };
-
-    Ok(validated)
-}
-
 impl TryFrom<&[u8]> for Hash {
-    type Error = PsHashError;
+    type Error = HashValidationError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let validated = validate_hash_str(value)?.as_bytes();
-
-        let hash = Self {
-            inner: validated.try_into()?,
-        };
-
-        Ok(hash)
+        Self::validate(value)
     }
 }
 
 impl TryFrom<&str> for Hash {
-    type Error = PsHashError;
+    type Error = HashValidationError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         value.as_bytes().try_into()
