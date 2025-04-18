@@ -23,6 +23,7 @@ pub const RS: ReedSolomon = match ReedSolomon::new(PARITY as u8) {
 };
 
 #[inline(always)]
+#[must_use]
 pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     let mut hasher = Sha256::new();
 
@@ -34,11 +35,13 @@ pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
 }
 
 #[inline(always)]
+#[must_use]
 pub fn blake3(data: &[u8]) -> blake3::Hash {
     blake3::hash(data)
 }
 
 #[inline(always)]
+#[must_use]
 pub fn xor<const S: usize>(a: &[u8; S], b: &[u8; S]) -> [u8; S] {
     let mut result = [0; S];
 
@@ -65,7 +68,7 @@ impl Hash {
     ///
     /// - [`HashError::BufferError`] is returned if an allocation fails.
     /// - [`HashError::RSGenerateParityError`] is returned if generating parity fails.
-    pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Hash, HashError> {
+    pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Self, HashError> {
         let data = data.as_ref();
         let mut buffer = Buffer::with_capacity(HASH_SIZE)?;
 
@@ -74,7 +77,7 @@ impl Hash {
         buffer.extend_from_slice(PackedInt::from_usize(data.len()).to_16_bits())?;
         buffer.extend_from_slice(RS.generate_parity(&buffer)?)?;
 
-        let hash = Hash {
+        let hash = Self {
             inner: sized_encode::<HASH_SIZE>(&buffer),
         };
 
@@ -86,13 +89,13 @@ impl Hash {
     /// # Errors
     ///
     /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
-    pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Hash, HashValidationError> {
+    pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Self, HashValidationError> {
         let mut hash = base64::decode(hash.as_ref());
         let (data, parity) = hash.split_at_mut(36);
 
         ReedSolomon::correct_detached_in_place(parity, data)?;
 
-        let hash = Hash {
+        let hash = Self {
             inner: sized_encode::<HASH_SIZE>(&hash),
         };
 
@@ -124,7 +127,7 @@ impl std::fmt::Debug for Hash {
             if validate_hash_char(b) {
                 f.write_char(b as char)
             } else {
-                f.write_str(&format!("<0x{:02X?}>", b))
+                f.write_str(&format!("<0x{b:02X?}>"))
             }?;
         }
 
@@ -197,7 +200,7 @@ impl std::ops::Index<std::ops::RangeToInclusive<usize>> for Hash {
     type Output = str;
 
     fn index(&self, index: std::ops::RangeToInclusive<usize>) -> &Self::Output {
-        self.index(0..index.end + 1)
+        &self.as_str()[index]
     }
 }
 
@@ -213,7 +216,7 @@ impl std::ops::Index<std::ops::RangeInclusive<usize>> for Hash {
     type Output = str;
 
     fn index(&self, index: std::ops::RangeInclusive<usize>) -> &Self::Output {
-        self.index(0..index.end() + 1)
+        &self.as_str()[index]
     }
 }
 
@@ -262,25 +265,27 @@ impl From<Hash> for [u8; HASH_SIZE] {
 }
 
 impl From<&Hash> for String {
-    fn from(hash: &Hash) -> String {
+    fn from(hash: &Hash) -> Self {
         hash.to_string()
     }
 }
 
 impl From<&Hash> for Vec<u8> {
-    fn from(hash: &Hash) -> Vec<u8> {
+    fn from(hash: &Hash) -> Self {
         hash.to_vec()
     }
 }
 
 #[inline(always)]
 /// validates that a byte is non-whitespace printable ascii
-pub fn validate_hash_char(b: u8) -> bool {
+#[must_use]
+pub const fn validate_hash_char(b: u8) -> bool {
     b > 0x20 && b < 0x7F
 }
 
 #[inline]
 /// validates that a byte slice contains only non-whitespace printable ascii
+#[must_use]
 pub fn validate_hash_str_bytes(str: &[u8]) -> bool {
     str.iter().all(|&b| validate_hash_char(b))
 }
@@ -327,17 +332,20 @@ impl TryFrom<&str> for Hash {
 }
 
 impl Hash {
-    pub fn as_bytes(&self) -> &[u8; HASH_SIZE] {
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; HASH_SIZE] {
         &self.inner
     }
 
-    pub fn as_str(&self) -> &str {
+    #[must_use]
+    pub const fn as_str(&self) -> &str {
         unsafe {
             // safe because Hash is guaranteed to be valid ASCII
             std::str::from_utf8_unchecked(&self.inner)
         }
     }
 
+    #[must_use]
     pub fn to_vec(&self) -> Vec<u8> {
         self.inner.to_vec()
     }
@@ -353,6 +361,7 @@ impl Hash {
     }
 }
 
+#[must_use]
 pub fn encode_parts(parts: HashParts) -> Hash {
     let (xored, checksum, length) = parts;
 

@@ -30,8 +30,7 @@ pub fn hash_length() -> Result<(), HashError> {
         assert_eq!(
             PackedInt::from_usize(input_length),
             length,
-            "{}",
-            input_length
+            "{input_length}"
         );
     }
 

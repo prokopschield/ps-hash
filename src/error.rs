@@ -16,7 +16,7 @@ pub enum PsHashError {
 
 impl From<std::array::TryFromSliceError> for PsHashError {
     fn from(_error: std::array::TryFromSliceError) -> Self {
-        PsHashError::TryFromSliceError
+        Self::TryFromSliceError
     }
 }
 
