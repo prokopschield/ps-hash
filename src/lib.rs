@@ -10,6 +10,7 @@ pub mod tests;
 pub const HASH_SIZE_BIN: usize = 32;
 pub const HASH_SIZE: usize = 50;
 
+#[inline(always)]
 pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     let mut hasher = Sha256::new();
 
@@ -20,12 +21,13 @@ pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     result.into()
 }
 
-pub fn blake3(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
-    return *blake3::hash(data).as_bytes();
+#[inline(always)]
+pub fn blake3(data: &[u8]) -> blake3::Hash {
+    blake3::hash(data)
 }
 
 #[inline(always)]
-pub fn xor<const S: usize>(a: [u8; S], b: [u8; S]) -> [u8; S] {
+pub fn xor<const S: usize>(a: &[u8; S], b: &[u8; S]) -> [u8; S] {
     let mut result = [0; S];
 
     for i in 0..S {
@@ -58,7 +60,7 @@ pub fn hash_to_parts(data: &[u8]) -> HashParts {
     let length = data.len();
     let shasum = sha256(data);
     let blasum = blake3(data);
-    let xored = xor(shasum, blasum);
+    let xored = xor(&shasum, blasum.as_bytes());
     let checksum = checksum(&xored, length as u32);
 
     (xored, checksum, PackedInt::from_usize(length))
