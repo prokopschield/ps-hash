@@ -1,3 +1,6 @@
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::unwrap_used)]
+
 use ps_pint16::PackedInt;
 
 use crate::error::HashError;

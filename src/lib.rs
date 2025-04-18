@@ -13,16 +13,16 @@ pub mod tests;
 
 pub const HASH_SIZE_BIN: usize = 32;
 pub const HASH_SIZE: usize = 64;
-pub const PARITY: usize = 7;
+pub const PARITY: u8 = 7;
 pub const PARITY_SIZE: usize = 14;
 pub const SIZE_SIZE: usize = std::mem::size_of::<u16>();
 
-pub const RS: ReedSolomon = match ReedSolomon::new(PARITY as u8) {
+pub const RS: ReedSolomon = match ReedSolomon::new(PARITY) {
     Ok(rs) => rs,
     Err(_) => panic!("Failed to construct Reed-Solomon codec."),
 };
 
-#[inline(always)]
+#[inline]
 #[must_use]
 pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     let mut hasher = Sha256::new();
@@ -34,7 +34,7 @@ pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
     result.into()
 }
 
-#[inline(always)]
+#[inline]
 #[must_use]
 pub fn blake3(data: &[u8]) -> blake3::Hash {
     blake3::hash(data)
@@ -56,6 +56,7 @@ impl Hash {
     ///
     /// - [`HashError::BufferError`] is returned if an allocation fails.
     /// - [`HashError::RSGenerateParityError`] is returned if generating parity fails.
+    #[allow(clippy::self_named_constructors)]
     pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Self, HashError> {
         let data = data.as_ref();
         let mut buffer = Buffer::with_capacity(HASH_SIZE)?;
@@ -210,14 +211,12 @@ impl std::ops::Index<std::ops::RangeInclusive<usize>> for Hash {
 
 impl PartialEq for Hash {
     fn eq(&self, other: &Self) -> bool {
-        let left = match decode_parts(&self.inner) {
-            Ok(parts) => parts,
-            Err(_) => return self.inner == other.inner,
+        let Ok(left) = decode_parts(&self.inner) else {
+            return self.inner == other.inner;
         };
 
-        let right = match decode_parts(&other.inner) {
-            Ok(parts) => parts,
-            Err(_) => return false,
+        let Ok(right) = decode_parts(&other.inner) else {
+            return false;
         };
 
         left.0 == right.0 && left.1 == right.1 && left.2 == right.2
@@ -226,14 +225,12 @@ impl PartialEq for Hash {
 
 impl Ord for Hash {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let left = match decode_parts(&self.inner) {
-            Ok(left) => left,
-            Err(_) => return self.inner.cmp(&other.inner),
+        let Ok(left) = decode_parts(&self.inner) else {
+            return self.inner.cmp(&other.inner);
         };
 
-        let right = match decode_parts(&other.inner) {
-            Ok(right) => right,
-            Err(_) => return self.inner.cmp(&other.inner),
+        let Ok(right) = decode_parts(&other.inner) else {
+            return self.inner.cmp(&other.inner);
         };
 
         left.0.cmp(&right.0)

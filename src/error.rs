@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use ps_buffer::BufferError;
 use ps_ecc::{RSDecodeError, RSGenerateParityError};
 use thiserror::Error;
