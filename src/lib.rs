@@ -40,18 +40,6 @@ pub fn blake3(data: &[u8]) -> blake3::Hash {
     blake3::hash(data)
 }
 
-#[inline(always)]
-#[must_use]
-pub fn xor<const S: usize>(a: &[u8; S], b: &[u8; S]) -> [u8; S] {
-    let mut result = [0; S];
-
-    for i in 0..S {
-        result[i] = a[i] ^ b[i];
-    }
-
-    result
-}
-
 pub type HashParts = ([u8; HASH_SIZE_BIN], [u8; PARITY_SIZE], PackedInt);
 
 /// a 64-byte ascii string representing a Hash
