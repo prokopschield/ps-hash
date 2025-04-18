@@ -1,5 +1,9 @@
 mod error;
 pub use error::PsHashError;
+use error::{HashError, HashValidationError};
+use ps_base64::{base64, sized_encode};
+use ps_buffer::Buffer;
+use ps_ecc::ReedSolomon;
 use ps_pint16::PackedInt;
 use sha2::{Digest, Sha256};
 use std::fmt::Write;
@@ -8,7 +12,15 @@ use std::fmt::Write;
 pub mod tests;
 
 pub const HASH_SIZE_BIN: usize = 32;
-pub const HASH_SIZE: usize = 50;
+pub const HASH_SIZE: usize = 64;
+pub const PARITY: usize = 7;
+pub const PARITY_SIZE: usize = 14;
+pub const SIZE_SIZE: usize = std::mem::size_of::<u16>();
+
+pub const RS: ReedSolomon = match ReedSolomon::new(PARITY as u8) {
+    Ok(rs) => rs,
+    Err(_) => panic!("Failed to construct Reed-Solomon codec."),
+};
 
 #[inline(always)]
 pub fn sha256(data: &[u8]) -> [u8; HASH_SIZE_BIN] {
@@ -37,40 +49,55 @@ pub fn xor<const S: usize>(a: &[u8; S], b: &[u8; S]) -> [u8; S] {
     result
 }
 
-pub fn checksum_u32(data: &[u8], length: u32) -> u32 {
-    let mut hash: u32 = length;
+pub type HashParts = ([u8; HASH_SIZE_BIN], [u8; PARITY_SIZE], PackedInt);
 
-    for c in data.iter() {
-        hash = (*c as u32)
-            .wrapping_add(hash << 6)
-            .wrapping_add(hash << 16)
-            .wrapping_sub(hash);
-    }
-
-    hash
-}
-
-pub fn checksum(data: &[u8], length: u32) -> [u8; 4] {
-    checksum_u32(data, length).to_le_bytes()
-}
-
-pub type HashParts = ([u8; HASH_SIZE_BIN], [u8; 4], PackedInt);
-
-pub fn hash_to_parts(data: &[u8]) -> HashParts {
-    let length = data.len();
-    let shasum = sha256(data);
-    let blasum = blake3(data);
-    let xored = xor(&shasum, blasum.as_bytes());
-    let checksum = checksum(&xored, length as u32);
-
-    (xored, checksum, PackedInt::from_usize(length))
-}
-
-/// a 50-byte ascii string representing a Hash
+/// a 64-byte ascii string representing a Hash
 #[derive(Clone, Copy, Eq)]
 #[repr(transparent)]
 pub struct Hash {
     inner: [u8; HASH_SIZE],
+}
+
+impl Hash {
+    /// Calculated the [`Hash`] of `data`.
+    ///
+    /// # Errors
+    ///
+    /// - [`HashError::BufferError`] is returned if an allocation fails.
+    /// - [`HashError::RSGenerateParityError`] is returned if generating parity fails.
+    pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Hash, HashError> {
+        let data = data.as_ref();
+        let mut buffer = Buffer::with_capacity(HASH_SIZE)?;
+
+        buffer.extend_from_slice(sha256(data))?;
+        buffer ^= &blake3(data).as_bytes()[..];
+        buffer.extend_from_slice(PackedInt::from_usize(data.len()).to_16_bits())?;
+        buffer.extend_from_slice(RS.generate_parity(&buffer)?)?;
+
+        let hash = Hash {
+            inner: sized_encode::<HASH_SIZE>(&buffer),
+        };
+
+        Ok(hash)
+    }
+
+    /// Validates and corrects a [`Hash`].
+    ///
+    /// # Errors
+    ///
+    /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
+    pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Hash, HashValidationError> {
+        let mut hash = base64::decode(hash.as_ref());
+        let (data, parity) = hash.split_at_mut(36);
+
+        ReedSolomon::correct_detached_in_place(parity, data)?;
+
+        let hash = Hash {
+            inner: sized_encode::<HASH_SIZE>(&hash),
+        };
+
+        Ok(hash)
+    }
 }
 
 impl AsRef<[u8]> for Hash {
@@ -340,8 +367,9 @@ pub fn encode_parts(parts: HashParts) -> Hash {
     }
 }
 
-pub fn hash(data: &[u8]) -> Hash {
-    encode_parts(hash_to_parts(data))
+#[inline]
+pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Hash, HashError> {
+    Hash::hash(data)
 }
 
 pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
@@ -352,23 +380,8 @@ pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
     let bytes = ps_base64::decode(hash);
 
     Ok((
-        bytes[0..HASH_SIZE_BIN].try_into()?,
-        bytes[HASH_SIZE_BIN..36].try_into()?,
-        PackedInt::from_12_bits(&bytes[36..38].try_into()?),
+        bytes[0..32].try_into()?,
+        bytes[34..48].try_into()?,
+        PackedInt::from_16_bits(&bytes[32..34].try_into()?),
     ))
-}
-
-pub fn verify_hash_integrity(hash: &[u8]) -> bool {
-    let parts = match decode_parts(hash) {
-        Ok(parts) => parts,
-        Err(_) => return false,
-    };
-
-    for i in 0..4 {
-        if parts.1 == checksum(&parts.0, (parts.2.to_u32() + i) << 12) {
-            return true;
-        }
-    }
-
-    false
 }

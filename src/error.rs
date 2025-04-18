@@ -1,3 +1,5 @@
+use ps_buffer::BufferError;
+use ps_ecc::{RSDecodeError, RSGenerateParityError};
 use thiserror::Error;
 
 #[derive(Error, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -16,4 +18,18 @@ impl From<std::array::TryFromSliceError> for PsHashError {
     fn from(_error: std::array::TryFromSliceError) -> Self {
         PsHashError::TryFromSliceError
     }
+}
+
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
+pub enum HashError {
+    #[error(transparent)]
+    BufferError(#[from] BufferError),
+    #[error(transparent)]
+    RSGenerateParityError(#[from] RSGenerateParityError),
+}
+
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
+pub enum HashValidationError {
+    #[error(transparent)]
+    RSDecodeError(#[from] RSDecodeError),
 }

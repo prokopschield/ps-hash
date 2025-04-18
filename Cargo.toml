@@ -1,7 +1,7 @@
 [package]
 name = "ps-hash"
 version = "0.1.0-10"
-description = "Generates 50-byte hashes with 256 bits of security."
+description = "Generates 64-byte ascii hashes with 256 bits of security."
 license = "GPL-3.0-or-later"
 edition = "2021"
 
@@ -14,6 +14,8 @@ opt-level = 3
 [dependencies]
 blake3 = "1.5.0"
 ps-base64 = "0.1.0-3"
+ps-buffer = "0.1.0-17"
+ps-ecc = "0.1.0-1"
 ps-pint16 = "0.1.0-3"
 sha2 = "0.10.8"
 thiserror = "1.0.61"
