@@ -1,6 +1,7 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::unwrap_used)]
 
+use ps_buffer::Buffer;
 use ps_pint16::PackedInt;
 
 use crate::error::HashError;
@@ -34,6 +35,23 @@ pub fn hash_length() -> Result<(), HashError> {
             PackedInt::from_usize(input_length),
             length,
             "{input_length}"
+        );
+    }
+
+    Ok(())
+}
+
+#[test]
+pub fn data_max_len() -> Result<(), HashError> {
+    for i in 0..10000 {
+        let buffer = Buffer::alloc(i)?;
+        let hash = crate::hash(buffer)?;
+        let length = crate::Hash::data_max_len(&hash).unwrap();
+
+        assert_eq!(
+            length,
+            PackedInt::from_usize(i).to_usize(),
+            "data_max_len({i}) test yielded {length}"
         );
     }
 
