@@ -14,6 +14,7 @@ pub mod tests;
 pub const HASH_SIZE_BIN: usize = 32;
 pub const HASH_SIZE: usize = 64;
 pub const PARITY: u8 = 7;
+pub const PARITY_OFFSET: usize = 34;
 pub const PARITY_SIZE: usize = 14;
 pub const SIZE_SIZE: usize = std::mem::size_of::<u16>();
 
@@ -80,7 +81,7 @@ impl Hash {
     /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
     pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Self, HashValidationError> {
         let mut hash = base64::decode(hash.as_ref());
-        let (data, parity) = hash.split_at_mut(36);
+        let (data, parity) = hash.split_at_mut(PARITY_OFFSET);
 
         ReedSolomon::correct_detached_in_place(parity, data)?;
 
@@ -336,7 +337,7 @@ pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
 
     Ok((
         bytes[0..32].try_into()?,
-        bytes[34..48].try_into()?,
-        PackedInt::from_16_bits(&bytes[32..34].try_into()?),
+        bytes[PARITY_OFFSET..48].try_into()?,
+        PackedInt::from_16_bits(&bytes[32..PARITY_OFFSET].try_into()?),
     ))
 }
