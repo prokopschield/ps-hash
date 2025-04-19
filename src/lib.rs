@@ -1,6 +1,5 @@
 mod error;
-pub use error::PsHashError;
-use error::{HashError, HashValidationError};
+pub use error::*;
 use ps_base64::{base64, sized_encode};
 use ps_buffer::Buffer;
 use ps_ecc::ReedSolomon;
