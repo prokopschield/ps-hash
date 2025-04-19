@@ -82,6 +82,11 @@ impl Hash {
     /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
     pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Self, HashValidationError> {
         let mut hash = base64::decode(hash.as_ref());
+
+        // The constant 0xF4 is chosen arbitrarily.
+        // Using 0x00 would produce Ok(AAA...AAA) for all short inputs.
+        hash.resize(HASH_SIZE_TOTAL_BIN, 0xF4);
+
         let (data, parity) = hash.split_at_mut(PARITY_OFFSET);
 
         ReedSolomon::correct_detached_in_place(parity, data)?;
