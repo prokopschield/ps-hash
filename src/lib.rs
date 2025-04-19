@@ -13,6 +13,7 @@ pub mod tests;
 
 pub const HASH_SIZE_BIN: usize = 32;
 pub const HASH_SIZE: usize = 64;
+pub const HASH_SIZE_TOTAL_BIN: usize = 48;
 pub const PARITY: u8 = 7;
 pub const PARITY_OFFSET: usize = 34;
 pub const PARITY_SIZE: usize = 14;
@@ -312,7 +313,7 @@ impl Hash {
 pub fn encode_parts(parts: HashParts) -> Hash {
     let (xored, checksum, length) = parts;
 
-    let mut vec: Vec<u8> = Vec::with_capacity(48);
+    let mut vec: Vec<u8> = Vec::with_capacity(HASH_SIZE_TOTAL_BIN);
 
     vec.extend_from_slice(&xored);
     vec.extend_from_slice(&length.to_16_bits());
@@ -336,8 +337,8 @@ pub fn decode_parts(hash: &[u8]) -> Result<HashParts, PsHashError> {
     let bytes = ps_base64::decode(hash);
 
     Ok((
-        bytes[0..32].try_into()?,
-        bytes[PARITY_OFFSET..48].try_into()?,
-        PackedInt::from_16_bits(&bytes[32..PARITY_OFFSET].try_into()?),
+        bytes[0..HASH_SIZE_BIN].try_into()?,
+        bytes[PARITY_OFFSET..HASH_SIZE_TOTAL_BIN].try_into()?,
+        PackedInt::from_16_bits(&bytes[HASH_SIZE_BIN..PARITY_OFFSET].try_into()?),
     ))
 }
