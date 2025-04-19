@@ -312,11 +312,11 @@ impl Hash {
 pub fn encode_parts(parts: HashParts) -> Hash {
     let (xored, checksum, length) = parts;
 
-    let mut vec: Vec<u8> = Vec::with_capacity(38);
+    let mut vec: Vec<u8> = Vec::with_capacity(48);
 
     vec.extend_from_slice(&xored);
+    vec.extend_from_slice(&length.to_16_bits());
     vec.extend_from_slice(&checksum);
-    vec.extend_from_slice(&length.to_12_bits());
 
     Hash {
         inner: ps_base64::sized_encode::<HASH_SIZE>(&vec),
