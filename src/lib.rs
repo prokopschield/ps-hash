@@ -1,4 +1,5 @@
 mod error;
+mod implementations;
 pub use error::*;
 use ps_base64::{base64, sized_encode};
 use ps_buffer::Buffer;
@@ -101,12 +102,6 @@ impl Hash {
 impl AsRef<[u8]> for Hash {
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
-    }
-}
-
-impl AsRef<str> for Hash {
-    fn as_ref(&self) -> &str {
-        self.as_str()
     }
 }
 
