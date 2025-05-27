@@ -1,5 +1,6 @@
 mod error;
 mod implementations;
+mod methods;
 pub use error::*;
 use ps_base64::{base64, sized_encode};
 use ps_buffer::Buffer;
@@ -282,14 +283,6 @@ impl Hash {
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8; HASH_SIZE] {
         &self.inner
-    }
-
-    #[must_use]
-    pub const fn as_str(&self) -> &str {
-        unsafe {
-            // safe because Hash is guaranteed to be valid ASCII
-            std::str::from_utf8_unchecked(&self.inner)
-        }
     }
 
     #[must_use]
