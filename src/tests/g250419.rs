@@ -269,9 +269,7 @@ fn test_try_from_slice() {
     assert_eq!(
         result,
         Err(HashValidationError::RSDecodeError(
-            ps_ecc::RSDecodeError::RSComputeErrorsError(
-                ps_ecc::RSComputeErrorsError::TooManyErrors
-            )
+            ps_ecc::RSDecodeError::TooManyErrors
         ))
     );
 }
