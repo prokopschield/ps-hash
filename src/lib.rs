@@ -1,3 +1,4 @@
+#![allow(clippy::missing_errors_doc)]
 mod error;
 mod implementations;
 mod methods;
