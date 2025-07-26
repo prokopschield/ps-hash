@@ -200,7 +200,7 @@ impl std::ops::Index<std::ops::RangeFull> for Hash {
     type Output = str;
 
     fn index(&self, _: std::ops::RangeFull) -> &Self::Output {
-        return self.as_str();
+        self.as_str()
     }
 }
 
