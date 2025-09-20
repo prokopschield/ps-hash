@@ -66,7 +66,7 @@ impl Hash {
         let mut buffer = Buffer::with_capacity(HASH_SIZE)?;
 
         buffer.extend_from_slice(sha256(data))?;
-        buffer ^= &blake3(data).as_bytes()[..];
+        buffer ^= blake3(data).as_bytes().as_slice();
         buffer.extend_from_slice(PackedInt::from_usize(data.len()).to_16_bits())?;
         buffer.extend_from_slice(RS.generate_parity(&buffer)?)?;
 
