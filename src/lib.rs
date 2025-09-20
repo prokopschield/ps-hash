@@ -61,7 +61,7 @@ impl Hash {
     /// - [`HashError::BufferError`] is returned if an allocation fails.
     /// - [`HashError::RSGenerateParityError`] is returned if generating parity fails.
     #[allow(clippy::self_named_constructors)]
-    pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Self, HashError> {
+    pub fn hash(data: impl AsRef<[u8]>) -> Result<Self, HashError> {
         let data = data.as_ref();
         let mut buffer = Buffer::with_capacity(HASH_SIZE)?;
 
@@ -82,7 +82,7 @@ impl Hash {
     /// # Errors
     ///
     /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
-    pub fn validate<T: AsRef<[u8]>>(hash: T) -> Result<Self, HashValidationError> {
+    pub fn validate(hash: impl AsRef<[u8]>) -> Result<Self, HashValidationError> {
         let mut hash = base64::decode(hash.as_ref());
 
         // The constant 0xF4 is chosen arbitrarily.
@@ -318,7 +318,7 @@ pub fn encode_parts(parts: HashParts) -> Hash {
 }
 
 #[inline]
-pub fn hash<T: AsRef<[u8]>>(data: T) -> Result<Hash, HashError> {
+pub fn hash(data: impl AsRef<[u8]>) -> Result<Hash, HashError> {
     Hash::hash(data)
 }
 
