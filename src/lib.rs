@@ -14,6 +14,7 @@ use std::fmt::Write;
 pub mod tests;
 
 pub const HASH_SIZE_BIN: usize = 32;
+pub const HASH_SIZE_COMPACT: usize = 42;
 pub const HASH_SIZE: usize = 64;
 pub const HASH_SIZE_TOTAL_BIN: usize = 48;
 pub const PARITY: u8 = 7;
@@ -85,6 +86,25 @@ impl Hash {
     pub fn validate(hash: impl AsRef<[u8]>) -> Result<Self, HashValidationError> {
         let mut hash = base64::decode(hash.as_ref());
 
+        Self::validate_bin_vec(&mut hash)
+    }
+
+    /// Validates and corrects a binary-encoded [`Hash`].
+    ///
+    /// # Errors
+    ///
+    /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
+    pub fn validate_bin(hash: impl AsRef<[u8]>) -> Result<Self, HashValidationError> {
+        Self::validate_bin_vec(&mut hash.as_ref().to_vec())
+    }
+
+    /// Validates and corrects a binary-encoded [`Hash`].\
+    /// The correction happens on the provided [`Vec`].
+    ///
+    /// # Errors
+    ///
+    /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
+    pub fn validate_bin_vec(hash: &mut Vec<u8>) -> Result<Self, HashValidationError> {
         // The constant 0xF4 is chosen arbitrarily.
         // Using 0x00 would produce Ok(AAA...AAA) for all short inputs.
         hash.resize(HASH_SIZE_TOTAL_BIN, 0xF4);
@@ -94,7 +114,7 @@ impl Hash {
         ReedSolomon::correct_detached_in_place(parity, data)?;
 
         let hash = Self {
-            inner: sized_encode::<HASH_SIZE>(&hash),
+            inner: sized_encode::<HASH_SIZE>(hash),
         };
 
         Ok(hash)
