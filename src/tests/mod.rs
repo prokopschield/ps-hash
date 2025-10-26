@@ -15,7 +15,7 @@ pub fn hash() -> Result<(), HashError> {
     let hash_value = super::hash(test_value)?.to_string();
 
     assert_eq!(
-        "3Lqbann~vFOn43UpL64ukdU4TlKXU4nFFvUZCL1iFF4NAFBGLtfcLLDPwF92CquL",
+        "3Lqbann-vFOn43UpL64ukdU4TlKXU4nFFvUZCL1iFF4NAFBGLtfcLLDPwF92CquL",
         hash_value
     );
 
