@@ -113,12 +113,6 @@ impl From<Hash> for [u8; HASH_SIZE] {
     }
 }
 
-impl From<&Hash> for String {
-    fn from(hash: &Hash) -> Self {
-        hash.to_string()
-    }
-}
-
 impl TryFrom<&[u8]> for Hash {
     type Error = HashValidationError;
 
