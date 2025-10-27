@@ -1,6 +1,5 @@
 #![allow(clippy::module_name_repetitions)]
 
-use ps_buffer::BufferError;
 use ps_ecc::{RSDecodeError, RSGenerateParityError};
 use thiserror::Error;
 
@@ -24,8 +23,6 @@ impl From<std::array::TryFromSliceError> for PsHashError {
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
 pub enum HashError {
-    #[error(transparent)]
-    BufferError(#[from] BufferError),
     #[error(transparent)]
     RSGenerateParityError(#[from] RSGenerateParityError),
 }

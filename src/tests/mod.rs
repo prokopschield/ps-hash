@@ -4,7 +4,6 @@
 mod g250419;
 mod h251027;
 
-use ps_buffer::Buffer;
 use ps_pint16::PackedInt;
 
 use crate::{error::HashError, Hash};
@@ -48,7 +47,10 @@ pub fn hash_length() -> Result<(), HashError> {
 #[test]
 pub fn data_max_len() -> Result<(), HashError> {
     for i in 0..10000 {
-        let buffer = Buffer::alloc(i)?;
+        let mut buffer = Vec::with_capacity(i);
+
+        buffer.resize_with(i, || 42);
+
         let hash = crate::hash(buffer)?;
         let length = crate::Hash::data_max_len(&hash).unwrap();
 
