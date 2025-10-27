@@ -256,13 +256,13 @@ fn test_to_vec() {
 fn test_data_max_len() {
     let data = b"data max len test";
     let hash = Hash::hash(data).unwrap();
-    let decoded_len = hash.data_max_len().unwrap();
+    let decoded_len = hash.data_max_len().to_usize();
     assert_eq!(decoded_len, data.len());
 
     // Test with a different length
     let long_data = vec![0u8; 150];
     let long_hash = Hash::hash(&long_data).unwrap();
-    let long_decoded_len = long_hash.data_max_len().unwrap();
+    let long_decoded_len = long_hash.data_max_len().to_usize();
     assert_eq!(long_decoded_len, long_data.len());
 }
 

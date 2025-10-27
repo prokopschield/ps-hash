@@ -137,13 +137,13 @@ fn test_compact_is_slice_of_inner() {
 fn test_length_accessor() {
     let data = b"length test";
     let hash = Hash::hash(data).unwrap();
-    assert_eq!(hash.length().to_usize(), data.len());
+    assert_eq!(hash.data_max_len().to_usize(), data.len());
 }
 
 #[test]
 fn test_length_accessor_zero() {
     let hash = Hash::hash(b"").unwrap();
-    assert_eq!(hash.length().to_usize(), 0);
+    assert_eq!(hash.data_max_len().to_usize(), 0);
 }
 
 #[test]
@@ -173,7 +173,7 @@ fn test_to_vec_consistency() {
 fn test_data_max_len_small() {
     let data = b"test";
     let hash = Hash::hash(data).unwrap();
-    let max_len = hash.data_max_len().unwrap();
+    let max_len = hash.data_max_len().to_usize();
     assert_eq!(max_len, data.len());
 }
 
@@ -181,7 +181,7 @@ fn test_data_max_len_small() {
 fn test_data_max_len_large() {
     let data = vec![42u8; 65536];
     let hash = Hash::hash(&data).unwrap();
-    let max_len = hash.data_max_len().unwrap();
+    let max_len = hash.data_max_len().to_usize();
     assert_eq!(max_len, data.len());
 }
 
@@ -336,7 +336,7 @@ fn test_data_max_len_boundary() {
     for len in [0, 1, 255, 256, 65536, 0x2f000] {
         let data = vec![0u8; len];
         let hash = Hash::hash(&data).unwrap();
-        let max_len = hash.data_max_len().unwrap();
+        let max_len = hash.data_max_len().to_usize();
         assert_eq!(max_len, len);
     }
 }
@@ -380,13 +380,13 @@ fn test_compact_round_trip() {
 fn test_compact_preserves_data() {
     let data = b"compact preserves";
     let hash = Hash::hash(data).unwrap();
-    let max_len_before = hash.data_max_len().unwrap();
+    let max_len_before = hash.data_max_len();
 
     let compact = hash.compact().to_vec();
     let mut binary = compact.clone();
     binary.resize(HASH_SIZE_TOTAL_BIN, 0);
     let recovered = Hash::validate_bin(&mut binary).unwrap();
-    let max_len_after = recovered.data_max_len().unwrap();
+    let max_len_after = recovered.data_max_len();
 
     assert_eq!(max_len_before, max_len_after);
 }

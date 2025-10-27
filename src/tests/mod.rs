@@ -20,7 +20,10 @@ pub fn hash() -> Result<(), HashError> {
     );
 
     assert_eq!(
-        Hash::validate(hash_value).unwrap().length().to_usize(),
+        Hash::validate(hash_value)
+            .unwrap()
+            .data_max_len()
+            .to_usize(),
         test_value.len()
     );
 
@@ -28,11 +31,11 @@ pub fn hash() -> Result<(), HashError> {
 }
 
 #[test]
-pub fn hash_length() -> Result<(), HashError> {
+pub fn hash_data_max_len() -> Result<(), HashError> {
     for input_length in 0..10000 {
         let input = b"F".repeat(input_length);
         let hash = super::hash(input.as_slice())?;
-        let length = hash.length();
+        let length = hash.data_max_len();
 
         assert_eq!(
             PackedInt::from_usize(input_length),
@@ -52,7 +55,7 @@ pub fn data_max_len() -> Result<(), HashError> {
         buffer.resize_with(i, || 42);
 
         let hash = crate::hash(buffer)?;
-        let length = crate::Hash::data_max_len(&hash).unwrap();
+        let length = crate::Hash::data_max_len(&hash).to_usize();
 
         assert_eq!(
             length,

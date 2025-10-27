@@ -163,15 +163,6 @@ impl Hash {
     pub fn to_vec(&self) -> Vec<u8> {
         self.to_string().into_bytes()
     }
-
-    /// This should tell you how large a vector to allocate if you want to copy the hashed data.
-    pub fn data_max_len(&self) -> Result<usize, PsHashError> {
-        let bits = &self.inner[DIGEST_SIZE..PARITY_OFFSET];
-        let bits = bits.try_into()?;
-        let size = PackedInt::from_16_bits(bits).to_usize();
-
-        Ok(size)
-    }
 }
 
 #[inline]
