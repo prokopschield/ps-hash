@@ -19,6 +19,10 @@ pub const PARITY: u8 = 7;
 pub const PARITY_OFFSET: usize = 34;
 pub const PARITY_SIZE: usize = 14;
 pub const SIZE_SIZE: usize = std::mem::size_of::<u16>();
+/// The minimum number of characters for a Hash to still be safely recoverable.
+pub const MIN_RECOVERABLE: usize = HASH_SIZE - (PARITY as usize * 8 / 6);
+/// The minimum number of bytes for a Hash to still be safely recoverable.
+pub const MIN_RECOVERABLE_BIN: usize = HASH_SIZE_BIN - (PARITY as usize);
 
 pub const RS: ReedSolomon = match ReedSolomon::new(PARITY) {
     Ok(rs) => rs,
@@ -77,17 +81,6 @@ impl Hash {
         inner[PARITY_OFFSET..].copy_from_slice(&parity);
 
         Ok(Self { inner })
-    }
-
-    /// Validates and corrects a [`Hash`].
-    ///
-    /// # Errors
-    ///
-    /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
-    pub fn validate(hash: impl AsRef<[u8]>) -> Result<Self, HashValidationError> {
-        let mut hash = base64::decode(hash.as_ref());
-
-        Self::validate_bin_vec(&mut hash)
     }
 
     /// Validates and corrects a binary-encoded [`Hash`].

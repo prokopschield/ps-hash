@@ -91,9 +91,7 @@ fn test_validate_invalid_base64() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        HashValidationError::RSDecodeError(ps_ecc::RSDecodeError::RSComputeErrorsError(
-            ps_ecc::RSComputeErrorsError::TooManyErrors
-        ))
+        HashValidationError::InvalidLength(33)
     ));
 }
 
@@ -210,20 +208,13 @@ fn test_try_from_slice() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        HashValidationError::RSDecodeError(ps_ecc::RSDecodeError::RSComputeErrorsError(
-            ps_ecc::RSComputeErrorsError::TooManyErrors
-        ))
+        HashValidationError::InvalidLength(9)
     ));
 
     let invalid_base64 = "invalid_base64==";
     let result = Hash::try_from(invalid_base64);
 
-    assert_eq!(
-        result,
-        Err(HashValidationError::RSDecodeError(
-            ps_ecc::RSDecodeError::TooManyErrors
-        ))
-    );
+    assert_eq!(result, Err(HashValidationError::InvalidLength(16)));
 }
 
 #[test]
@@ -238,9 +229,7 @@ fn test_try_from_str() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        HashValidationError::RSDecodeError(ps_ecc::RSDecodeError::RSComputeErrorsError(
-            ps_ecc::RSComputeErrorsError::TooManyErrors
-        ))
+        HashValidationError::InvalidLength(23)
     ));
 }
 
