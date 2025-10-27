@@ -55,7 +55,7 @@ pub struct Hash {
 }
 
 impl Hash {
-    /// Calculated the [`Hash`] of `data`.
+    /// Calculates the [`Hash`] of `data`.
     ///
     /// # Errors
     ///
