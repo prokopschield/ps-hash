@@ -54,7 +54,6 @@ impl Hash {
     ///
     /// # Errors
     ///
-    /// - [`HashError::BufferError`] is returned if an allocation fails.
     /// - [`HashError::RSGenerateParityError`] is returned if generating parity fails.
     #[allow(clippy::self_named_constructors)]
     pub fn hash(data: impl AsRef<[u8]>) -> Result<Self, HashError> {
