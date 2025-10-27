@@ -237,7 +237,7 @@ fn test_try_from_str() {
 fn test_to_vec() {
     let data = b"to vec test";
     let hash = Hash::hash(data).unwrap();
-    let vec = hash.to_vec();
+    let vec = Vec::from(hash);
     assert_eq!(vec, hash.to_string().into_bytes());
 }
 

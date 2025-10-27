@@ -165,7 +165,7 @@ fn test_parity_accessor() {
 #[test]
 fn test_to_vec_consistency() {
     let hash = Hash::hash(b"to_vec test").unwrap();
-    let vec = hash.to_vec();
+    let vec = Vec::from(hash);
     assert_eq!(vec, hash.to_string().into_bytes());
 }
 

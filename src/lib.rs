@@ -129,13 +129,6 @@ impl TryFrom<&str> for Hash {
     }
 }
 
-impl Hash {
-    #[must_use]
-    pub fn to_vec(&self) -> Vec<u8> {
-        self.to_string().into_bytes()
-    }
-}
-
 #[inline]
 pub fn hash(data: impl AsRef<[u8]>) -> Result<Hash, HashError> {
     Hash::hash(data)
