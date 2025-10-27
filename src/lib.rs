@@ -119,12 +119,6 @@ impl From<&Hash> for String {
     }
 }
 
-impl From<&Hash> for Vec<u8> {
-    fn from(hash: &Hash) -> Self {
-        hash.to_vec()
-    }
-}
-
 impl TryFrom<&[u8]> for Hash {
     type Error = HashValidationError;
 
