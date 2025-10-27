@@ -2,11 +2,12 @@
 #![allow(clippy::unwrap_used)]
 
 mod g250419;
+mod h251027;
 
 use ps_buffer::Buffer;
 use ps_pint16::PackedInt;
 
-use crate::error::HashError;
+use crate::{error::HashError, Hash};
 
 #[test]
 pub fn hash() -> Result<(), HashError> {
@@ -19,9 +20,10 @@ pub fn hash() -> Result<(), HashError> {
         hash_value
     );
 
-    let parts = super::decode_parts(hash_value.as_bytes()).unwrap();
-
-    assert_eq!(parts.2.to_usize(), test_value.len());
+    assert_eq!(
+        Hash::validate(hash_value).unwrap().length().to_usize(),
+        test_value.len()
+    );
 
     Ok(())
 }
@@ -31,7 +33,7 @@ pub fn hash_length() -> Result<(), HashError> {
     for input_length in 0..10000 {
         let input = b"F".repeat(input_length);
         let hash = super::hash(input.as_slice())?;
-        let (_, _, length) = super::decode_parts(hash.as_bytes()).unwrap();
+        let length = hash.length();
 
         assert_eq!(
             PackedInt::from_usize(input_length),
