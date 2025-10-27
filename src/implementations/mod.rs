@@ -1,4 +1,6 @@
+mod as_ref;
 mod debug;
+mod deref;
 mod display;
 mod eq;
 mod hash;
