@@ -10,6 +10,7 @@ blake3 = "1.8.2"
 ps-base64 = "0.1.0-6"
 ps-ecc = "0.1.0-7"
 ps-pint16 = "0.1.0-4"
+ps-util = "0.1.0-4"
 sha2 = "0.10.9"
 thiserror = "2.0.17"
 
