@@ -12,9 +12,9 @@ use sha2::{Digest, Sha256};
 pub mod tests;
 
 pub const DIGEST_SIZE: usize = 32;
+pub const HASH_SIZE_BIN: usize = 48;
 pub const HASH_SIZE_COMPACT: usize = 42;
 pub const HASH_SIZE: usize = 64;
-pub const HASH_SIZE_TOTAL_BIN: usize = 48;
 pub const PARITY: u8 = 7;
 pub const PARITY_OFFSET: usize = 34;
 pub const PARITY_SIZE: usize = 14;
@@ -46,7 +46,7 @@ pub fn blake3(data: &[u8]) -> blake3::Hash {
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Hash {
-    inner: [u8; HASH_SIZE_TOTAL_BIN],
+    inner: [u8; HASH_SIZE_BIN],
 }
 
 impl Hash {
@@ -58,7 +58,7 @@ impl Hash {
     #[allow(clippy::self_named_constructors)]
     pub fn hash(data: impl AsRef<[u8]>) -> Result<Self, HashError> {
         let data = data.as_ref();
-        let mut inner = [0u8; HASH_SIZE_TOTAL_BIN];
+        let mut inner = [0u8; HASH_SIZE_BIN];
 
         let sha = sha256(data);
         let blake = blake3(data);
@@ -108,13 +108,13 @@ impl Hash {
     pub fn validate_bin_vec(hash: &mut Vec<u8>) -> Result<Self, HashValidationError> {
         // The constant 0xF4 is chosen arbitrarily.
         // Using 0x00 would produce Ok(AAA...AAA) for all short inputs.
-        hash.resize(HASH_SIZE_TOTAL_BIN, 0xF4);
+        hash.resize(HASH_SIZE_BIN, 0xF4);
 
         let (data, parity) = hash.split_at_mut(PARITY_OFFSET);
 
         ReedSolomon::correct_detached_in_place(parity, data)?;
 
-        let mut inner = [0u8; HASH_SIZE_TOTAL_BIN];
+        let mut inner = [0u8; HASH_SIZE_BIN];
 
         inner.copy_from_slice(hash);
 
