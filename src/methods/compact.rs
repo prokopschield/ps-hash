@@ -3,7 +3,7 @@ use crate::{Hash, HASH_SIZE_COMPACT};
 impl Hash {
     /// Produces a compact binary form of this [`Hash`].
     ///
-    /// To turn the binary form back into a [`Hash`], use [`Hash::validate_bin`] or [`Hash::validate_bin_vec`].
+    /// To turn the binary form back into a [`Hash`], use [`Hash::validate`].
     #[inline]
     #[must_use]
     pub fn compact(&self) -> &[u8] {
@@ -24,11 +24,11 @@ mod tests {
             let h = hash(&input)?;
             let mut c = h.compact();
 
-            let r1 = Hash::validate_bin(&c)?;
+            let r1 = Hash::validate(&c)?;
 
             assert_eq!(r1, h, "validated should equal original");
 
-            let r2 = Hash::validate_bin(&mut c)?;
+            let r2 = Hash::validate(&mut c)?;
 
             assert_eq!(r1, r2, "validated hashes should be equal");
         }

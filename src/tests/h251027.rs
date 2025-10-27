@@ -99,7 +99,7 @@ fn test_validate_bin_uncorrupted() {
     let compact = original.compact().to_vec();
     let mut binary = compact.clone();
     binary.resize(HASH_SIZE_BIN, 0);
-    let result = Hash::validate_bin(&mut binary);
+    let result = Hash::validate(&mut binary);
     assert!(result.is_ok());
 }
 
@@ -111,7 +111,7 @@ fn test_validate_bin_corrupted() {
     if !binary.is_empty() {
         binary[0] ^= 0x01;
     }
-    let result = Hash::validate_bin(&mut binary);
+    let result = Hash::validate(&mut binary);
     assert!(result.is_ok());
 }
 
@@ -372,7 +372,7 @@ fn test_compact_round_trip() {
     let compact = original.compact().to_vec();
     let mut binary = compact.clone();
     binary.resize(HASH_SIZE_BIN, 0);
-    let recovered = Hash::validate_bin(&mut binary).unwrap();
+    let recovered = Hash::validate(&mut binary).unwrap();
     assert_eq!(original, recovered);
 }
 
@@ -385,7 +385,7 @@ fn test_compact_preserves_data() {
     let compact = hash.compact().to_vec();
     let mut binary = compact.clone();
     binary.resize(HASH_SIZE_BIN, 0);
-    let recovered = Hash::validate_bin(&mut binary).unwrap();
+    let recovered = Hash::validate(&mut binary).unwrap();
     let max_len_after = recovered.data_max_len();
 
     assert_eq!(max_len_before, max_len_after);
@@ -403,7 +403,7 @@ fn test_str_then_bin_validation() {
 
     let mut binary = original.compact().to_vec();
     binary.resize(HASH_SIZE_BIN, 0);
-    let validated_bin = Hash::validate_bin(&mut binary).unwrap();
+    let validated_bin = Hash::validate(&mut binary).unwrap();
 
     assert_eq!(validated_str, validated_bin);
 }

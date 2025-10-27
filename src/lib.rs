@@ -83,15 +83,6 @@ impl Hash {
         Ok(Self { inner })
     }
 
-    /// Validates and corrects a binary-encoded [`Hash`].
-    ///
-    /// # Errors
-    ///
-    /// - [`HashValidationError::RSDecodeError`] is returned if the hash is unrecoverable.
-    pub fn validate_bin(hash: impl AsRef<[u8]>) -> Result<Self, HashValidationError> {
-        Self::validate_bin_vec(&mut hash.as_ref().to_vec())
-    }
-
     /// Validates and corrects a binary-encoded [`Hash`].\
     /// The correction happens on the provided [`Vec`].
     ///
