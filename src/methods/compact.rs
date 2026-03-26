@@ -22,13 +22,13 @@ mod tests {
         for i in 0..1000 {
             let input = "X".repeat(i);
             let h = hash(&input)?;
-            let mut c = h.compact();
+            let c = h.compact();
 
-            let r1 = Hash::validate(&c)?;
+            let r1 = Hash::validate(c)?;
 
             assert_eq!(r1, h, "validated should equal original");
 
-            let r2 = Hash::validate(&mut c)?;
+            let r2 = Hash::validate(c)?;
 
             assert_eq!(r1, r2, "validated hashes should be equal");
         }
