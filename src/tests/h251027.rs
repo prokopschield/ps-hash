@@ -6,7 +6,7 @@ use crate::{Hash, HASH_SIZE, HASH_SIZE_BIN, HASH_SIZE_COMPACT, PARITY_SIZE};
 
 #[test]
 fn test_hash_creation_empty_data() {
-    let result = Hash::hash(&[]);
+    let result = Hash::hash([]);
     assert!(result.is_ok());
     let hash = result.unwrap();
     assert_eq!(hash.to_string().len(), HASH_SIZE);
@@ -97,7 +97,7 @@ fn test_validate_unrecoverable_corruption() {
 fn test_validate_bin_uncorrupted() {
     let original = Hash::hash(b"binary validation").unwrap();
     let compact = original.compact().to_vec();
-    let mut binary = compact.clone();
+    let mut binary = compact;
     binary.resize(HASH_SIZE_BIN, 0);
     let result = Hash::validate(&mut binary);
     assert!(result.is_ok());
@@ -199,7 +199,7 @@ fn test_display_trait() {
 #[test]
 fn test_debug_trait() {
     let hash = Hash::hash(b"debug").unwrap();
-    let debug_str = format!("{:?}", hash);
+    let debug_str = format!("{hash:?}");
     assert!(!debug_str.is_empty());
 }
 
@@ -345,7 +345,7 @@ fn test_data_max_len_boundary() {
 fn test_validate_bin_vec() {
     let original = Hash::hash(b"bin vec").unwrap();
     let compact = original.compact().to_vec();
-    let mut binary = compact.clone();
+    let mut binary = compact;
     binary.resize(HASH_SIZE_BIN, 0);
     let result = Hash::validate_bin_vec(&mut binary);
     assert!(result.is_ok());
@@ -370,7 +370,7 @@ fn test_consecutive_validations() {
 fn test_compact_round_trip() {
     let original = Hash::hash(b"compact round trip").unwrap();
     let compact = original.compact().to_vec();
-    let mut binary = compact.clone();
+    let mut binary = compact;
     binary.resize(HASH_SIZE_BIN, 0);
     let recovered = Hash::validate(&mut binary).unwrap();
     assert_eq!(original, recovered);
@@ -383,7 +383,7 @@ fn test_compact_preserves_data() {
     let max_len_before = hash.data_max_len();
 
     let compact = hash.compact().to_vec();
-    let mut binary = compact.clone();
+    let mut binary = compact;
     binary.resize(HASH_SIZE_BIN, 0);
     let recovered = Hash::validate(&mut binary).unwrap();
     let max_len_after = recovered.data_max_len();
