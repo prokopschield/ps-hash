@@ -4,12 +4,14 @@ use ps_ecc::{RSDecodeError, RSGenerateParityError};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum HashError {
     #[error(transparent)]
     RSGenerateParityError(#[from] RSGenerateParityError),
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum HashValidationError {
     #[error("Invalid Hash length: {0}")]
     InvalidLength(usize),
