@@ -1,6 +1,6 @@
 use ps_ecc::ReedSolomon;
 
-use crate::{HashValidationError, HASH_SIZE_BIN, PARITY_OFFSET};
+use crate::{HashValidationError, DIGEST_SIZE, HASH_SIZE_BIN, PARITY_OFFSET};
 
 use super::super::Hash;
 
@@ -10,6 +10,10 @@ impl Hash {
 
         let (data, parity) = hash.split_at_mut(PARITY_OFFSET);
         ReedSolomon::correct_detached_in_place(parity, data)?;
+
+        if data[..DIGEST_SIZE] == [0; DIGEST_SIZE] {
+            return Err(HashValidationError::ZeroDigest);
+        }
 
         let mut inner = [0u8; HASH_SIZE_BIN];
         inner.copy_from_slice(hash);
@@ -21,7 +25,7 @@ impl Hash {
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
-    use crate::{Hash, HASH_SIZE_BIN};
+    use crate::{Hash, HashValidationError, HASH_SIZE_BIN};
 
     #[test]
     fn validate_bin_vec_uncorrupted() {
@@ -102,6 +106,16 @@ mod tests {
         let _ = Hash::validate_bin_vec(&mut vec);
         assert_ne!(vec[0], corrupted_byte);
         assert_eq!(vec[0], original.inner[0]);
+    }
+
+    #[test]
+    fn validate_bin_vec_rejects_the_zero_digest() {
+        let mut vec = vec![0u8; HASH_SIZE_BIN];
+
+        assert_eq!(
+            Hash::validate_bin_vec(&mut vec),
+            Err(HashValidationError::ZeroDigest)
+        );
     }
 
     #[test]

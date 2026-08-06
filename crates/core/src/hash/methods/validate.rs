@@ -2,8 +2,8 @@ use ps_base64::sized_decode;
 use ps_ecc::ReedSolomon;
 
 use crate::{
-    HashValidationError, HASH_SIZE, HASH_SIZE_BIN, MIN_RECOVERABLE, MIN_RECOVERABLE_BIN,
-    PARITY_OFFSET,
+    HashValidationError, DIGEST_SIZE, HASH_SIZE, HASH_SIZE_BIN, MIN_RECOVERABLE,
+    MIN_RECOVERABLE_BIN, PARITY_OFFSET,
 };
 
 use super::super::Hash;
@@ -26,6 +26,12 @@ impl Hash {
 
         let (data, parity) = hash.inner.split_at_mut(PARITY_OFFSET);
         ReedSolomon::correct_detached_in_place(parity, data)?;
+
+        // No hashed input produces the zero digest, but the all-zero buffer is
+        // a valid Reed-Solomon codeword, so it must be rejected explicitly.
+        if hash.inner[..DIGEST_SIZE] == [0; DIGEST_SIZE] {
+            return Err(HashValidationError::ZeroDigest);
+        }
 
         Ok(hash)
     }
@@ -181,6 +187,29 @@ mod tests {
         let original = Hash::hash(b"vec").expect("hashing should succeed");
         let bytes = original.to_string().into_bytes();
         assert!(Hash::validate(&bytes).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_the_zero_digest_in_every_representation() {
+        for input in [vec![0u8; HASH_SIZE_BIN], vec![b'A'; HASH_SIZE]] {
+            assert_eq!(
+                Hash::validate(&input),
+                Err(HashValidationError::ZeroDigest),
+                "accepted zero digest: {:?}",
+                String::from_utf8_lossy(&input)
+            );
+        }
+    }
+
+    #[test]
+    fn validate_rejects_inputs_whose_bytes_the_decoder_skips() {
+        for junk in [vec![b' '; HASH_SIZE], vec![b'='; HASH_SIZE]] {
+            assert!(
+                Hash::validate(&junk).is_err(),
+                "accepted junk input: {:?}",
+                String::from_utf8_lossy(&junk)
+            );
+        }
     }
 
     #[test]

@@ -17,4 +17,6 @@ pub enum HashValidationError {
     InvalidLength(usize),
     #[error(transparent)]
     RSDecodeError(#[from] RSDecodeError),
+    #[error("The digest is all zeros")]
+    ZeroDigest,
 }
