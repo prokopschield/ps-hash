@@ -6,6 +6,10 @@ use super::super::Hash;
 
 impl Hash {
     pub fn validate_bin_vec(hash: &mut Vec<u8>) -> Result<Self, HashValidationError> {
+        if hash.len() > HASH_SIZE_BIN {
+            return Err(HashValidationError::InvalidLength(hash.len()));
+        }
+
         hash.resize(HASH_SIZE_BIN, 0xF4);
 
         let (data, parity) = hash.split_at_mut(PARITY_OFFSET);
@@ -116,6 +120,19 @@ mod tests {
             Hash::validate_bin_vec(&mut vec),
             Err(HashValidationError::ZeroDigest)
         );
+    }
+
+    #[test]
+    fn validate_bin_vec_rejects_oversized_input() {
+        let original = Hash::hash(b"oversized").expect("hashing should succeed");
+        let mut vec = original.inner.to_vec();
+        vec.push(0xF4);
+
+        assert_eq!(
+            Hash::validate_bin_vec(&mut vec),
+            Err(HashValidationError::InvalidLength(HASH_SIZE_BIN + 1))
+        );
+        assert_eq!(vec.len(), HASH_SIZE_BIN + 1);
     }
 
     #[test]
