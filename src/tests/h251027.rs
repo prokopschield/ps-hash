@@ -1,4 +1,11 @@
-use crate::{Hash, HASH_SIZE, HASH_SIZE_BIN, HASH_SIZE_COMPACT, PARITY_SIZE};
+use crate::{Hash, HASH_SIZE_BIN, HASH_SIZE_COMPACT, HASH_SIZE_CROCKFORD, PARITY_SIZE};
+
+/// Replaces the character at `index` with a different one that is valid in
+/// both alphabets, so that corruption tests stay inside the encoded character
+/// set.
+fn corrupt(bytes: &mut [u8], index: usize) {
+    bytes[index] = if bytes[index] == b'A' { b'B' } else { b'A' };
+}
 
 // ============================================================================
 // Basic Hash Creation and Validation
@@ -9,7 +16,7 @@ fn test_hash_creation_empty_data() {
     let result = Hash::hash([]);
     assert!(result.is_ok());
     let hash = result.unwrap();
-    assert_eq!(hash.to_string().len(), HASH_SIZE);
+    assert_eq!(hash.to_string().len(), HASH_SIZE_CROCKFORD);
 }
 
 #[test]
@@ -18,7 +25,7 @@ fn test_hash_creation_non_empty_data() {
     let result = Hash::hash(data);
     assert!(result.is_ok());
     let hash = result.unwrap();
-    assert_eq!(hash.to_string().len(), HASH_SIZE);
+    assert_eq!(hash.to_string().len(), HASH_SIZE_CROCKFORD);
 }
 
 #[test]
@@ -55,10 +62,12 @@ fn test_validate_uncorrupted_hash() {
 }
 
 #[test]
-fn test_validate_single_bit_corruption() {
+fn test_validate_single_character_corruption() {
     let original = Hash::hash(b"corruption test").unwrap();
     let mut corrupted = original.to_string().into_bytes();
-    corrupted[5] ^= 0x01; // Flip single bit
+
+    corrupt(&mut corrupted, 5);
+
     let corrupted_str = String::from_utf8(corrupted).unwrap();
     let result = Hash::validate(&corrupted_str);
     assert!(result.is_ok());
@@ -66,16 +75,19 @@ fn test_validate_single_bit_corruption() {
 }
 
 #[test]
-fn test_validate_multi_bit_corruption_recoverable() {
-    let original = Hash::hash(b"multi corruption").unwrap();
+fn test_validate_multi_character_corruption_recoverable() {
+    let original = Hash::hash(b"char corruption").unwrap();
     let mut corrupted = original.to_string().into_bytes();
-    // Corrupt up to 6 bits (within Reed-Solomon correction capability)
-    for byte in corrupted.iter_mut().take(4) {
-        *byte ^= 0x0F;
+
+    // Four character replacements stay within the seven-byte correction budget.
+    for index in [5, 17, 33, 61] {
+        corrupt(&mut corrupted, index);
     }
+
     let corrupted_str = String::from_utf8(corrupted).unwrap();
     let result = Hash::validate(&corrupted_str);
     assert!(result.is_ok());
+    assert_eq!(result.unwrap(), original);
 }
 
 #[test]
@@ -83,8 +95,8 @@ fn test_validate_unrecoverable_corruption() {
     let original = Hash::hash(b"unrecoverable").unwrap();
     let mut corrupted = original.to_string().into_bytes();
 
-    for byte in corrupted.iter_mut().take(10) {
-        *byte ^= 0x1F;
+    for index in 0..30 {
+        corrupt(&mut corrupted, index);
     }
 
     let corrupted_str = String::from_utf8(corrupted).unwrap();
@@ -101,18 +113,21 @@ fn test_validate_bin_uncorrupted() {
     binary.resize(HASH_SIZE_BIN, 0);
     let result = Hash::validate(&mut binary);
     assert!(result.is_ok());
+    assert_eq!(result.unwrap(), original);
 }
 
 #[test]
 fn test_validate_bin_corrupted() {
     let original = Hash::hash(b"binary corruption").unwrap();
     let mut binary = original.compact().to_vec();
-    binary.resize(HASH_SIZE_BIN, 0);
-    if !binary.is_empty() {
-        binary[0] ^= 0x01;
-    }
-    let result = Hash::validate(&mut binary);
+
+    // Corrupt one byte; together with the six truncated parity bytes this
+    // stays within the seven-byte correction budget.
+    binary[0] ^= 0xFF;
+
+    let result = Hash::validate(&binary);
     assert!(result.is_ok());
+    assert_eq!(result.unwrap(), original);
 }
 
 // ============================================================================
@@ -126,11 +141,11 @@ fn test_compact_returns_correct_size() {
 }
 
 #[test]
-fn test_compact_is_slice_of_inner() {
-    let hash = Hash::hash(b"compact slice").unwrap();
-    let compact = hash.compact();
-    let string_bytes = ps_base64::decode(&hash.to_string().into_bytes());
-    assert_eq!(compact, &string_bytes[..HASH_SIZE_COMPACT]);
+fn test_compact_round_trips_via_validate_bin_vec() {
+    let original = Hash::hash(b"compact slice").unwrap();
+    let mut vec = original.compact().to_vec();
+    let recovered = Hash::validate_bin_vec(&mut vec).unwrap();
+    assert_eq!(original, recovered);
 }
 
 #[test]
@@ -158,7 +173,6 @@ fn test_digest_accessor() {
 fn test_parity_accessor() {
     let hash = Hash::hash(b"parity test").unwrap();
     let parity = hash.parity();
-    // Parity should be last 6 bytes
     assert_eq!(parity.len(), PARITY_SIZE);
 }
 
@@ -232,7 +246,9 @@ fn test_partial_eq_different() {
 fn test_partial_eq_corrupted_recoverable() {
     let original = Hash::hash(b"eq corrupted").unwrap();
     let mut corrupted = original.to_string().into_bytes();
-    corrupted[3] ^= 0x01;
+
+    corrupt(&mut corrupted, 3);
+
     let corrupted_str = String::from_utf8(corrupted).unwrap();
     let recovered = Hash::validate(&corrupted_str).unwrap();
     assert_eq!(original, recovered);
@@ -259,8 +275,8 @@ fn test_ord_trait_symmetry() {
 #[test]
 fn test_from_hash_to_array() {
     let hash = Hash::hash(b"to array").unwrap();
-    let array: [u8; HASH_SIZE] = hash.into();
-    assert_eq!(array.len(), HASH_SIZE);
+    let array: [u8; HASH_SIZE_CROCKFORD] = hash.into();
+    assert_eq!(array.len(), HASH_SIZE_CROCKFORD);
 }
 
 #[test]
@@ -306,8 +322,10 @@ fn test_try_from_too_short() {
 }
 
 #[test]
-fn test_try_from_invalid_base64() {
-    let invalid = "!@#$%^&*()!@#$%^&*()!@#$%^&*()!@#$%^&*()!@#$%^&*()!@#$%^&";
+fn test_try_from_invalid_encoding() {
+    // Length 50 falls between the binary and base64url ranges, so no
+    // representation accepts it.
+    let invalid = "!@#$%^&*()!@#$%^&*()!@#$%^&*()!@#$%^&*()!@#$%^&*()";
     let result = Hash::try_from(invalid);
     assert!(result.is_err());
 }
@@ -349,6 +367,7 @@ fn test_validate_bin_vec() {
     binary.resize(HASH_SIZE_BIN, 0);
     let result = Hash::validate_bin_vec(&mut binary);
     assert!(result.is_ok());
+    assert_eq!(result.unwrap(), original);
 }
 
 #[test]

@@ -106,11 +106,13 @@ mod tests {
         set.insert(original);
 
         let mut corrupted = original.to_string().into_bytes();
-        corrupted[5] ^= 0x01;
+        // Replace with a character that is valid in both alphabets, so that
+        // the corruption stays inside the encoded character set.
+        corrupted[5] = if corrupted[5] == b'A' { b'B' } else { b'A' };
         let recovered = Hash::validate(
             String::from_utf8(corrupted).expect("corrupted bytes should be valid UTF-8"),
         )
-        .expect("single-bit corruption should be recovered");
+        .expect("single-character corruption should be recovered");
         assert!(set.contains(&recovered));
     }
 

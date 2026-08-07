@@ -12,7 +12,7 @@ use crate::{error::HashError, Hash};
 pub fn hash() -> Result<(), HashError> {
     let test_str = b"Hello, world!";
     let test_value = test_str.as_slice();
-    let hash_value = super::hash(test_value)?.to_string();
+    let hash_value = super::hash(test_value)?.to_base64();
 
     assert_eq!(
         "3Lqbann-vFOn43UpL64ukdU4TlKXU4nFFvUZCL1iFF4NAFBGLtfcLLDPwF92CquL",

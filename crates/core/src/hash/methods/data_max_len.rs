@@ -5,6 +5,10 @@ use crate::DIGEST_SIZE;
 use super::super::Hash;
 
 impl Hash {
+    /// Returns the length of the hashed data.
+    ///
+    /// The length is stored as a [`PackedInt`], which rounds up, so this is an
+    /// upper bound for data longer than [`PackedInt`] can represent exactly.
     #[must_use]
     pub const fn data_max_len(&self) -> PackedInt {
         PackedInt::from_16_bits(&[self.inner[DIGEST_SIZE], self.inner[DIGEST_SIZE + 1]])
@@ -30,24 +34,23 @@ mod tests {
     }
 
     #[test]
-    fn data_max_len_exact_255() {
-        let data = vec![0u8; 255];
-        let h = Hash::hash(&data).expect("hashing should succeed");
-        assert_eq!(h.data_max_len().to_usize(), 255);
+    fn data_max_len_is_exact_at_boundaries() {
+        for len in [0, 1, 127, 128, 255, 256, 511, 512, 65536, 0x2f000] {
+            let data = vec![0u8; len];
+            let h = Hash::hash(&data).expect("hashing should succeed");
+
+            assert_eq!(h.data_max_len().to_usize(), len, "data_max_len({len})");
+        }
     }
 
     #[test]
-    fn data_max_len_exact_256() {
-        let data = vec![0u8; 256];
-        let h = Hash::hash(&data).expect("hashing should succeed");
-        assert_eq!(h.data_max_len().to_usize(), 256);
-    }
+    fn data_max_len_is_exact_below_512() {
+        for len in 0..512 {
+            let data = vec![0u8; len];
+            let h = Hash::hash(&data).expect("hashing should succeed");
 
-    #[test]
-    fn data_max_len_exact_65536() {
-        let data = vec![0u8; 65536];
-        let h = Hash::hash(&data).expect("hashing should succeed");
-        assert_eq!(h.data_max_len().to_usize(), 65536);
+            assert_eq!(h.data_max_len().to_usize(), len, "data_max_len({len})");
+        }
     }
 
     #[test]
@@ -55,15 +58,6 @@ mod tests {
         let data = vec![0u8; 1_000_000];
         let h = Hash::hash(&data).expect("hashing should succeed");
         assert!(h.data_max_len().to_usize() >= 1_000_000);
-    }
-
-    #[test]
-    fn data_max_len_boundary_values() {
-        for len in [0, 1, 127, 128, 255, 256, 65536, 0x2f000] {
-            let data = vec![0u8; len];
-            let h = Hash::hash(&data).expect("hashing should succeed");
-            assert_eq!(h.data_max_len().to_usize(), len);
-        }
     }
 
     #[test]
@@ -84,12 +78,16 @@ mod tests {
     }
 
     #[test]
-    fn data_max_len_preserved_after_validation() {
+    fn data_max_len_survives_every_representation() {
         let data = b"preserved";
         let original = Hash::hash(data).expect("hashing should succeed");
-        let validated = Hash::validate(original.to_string())
-            .expect("validation of an uncorrupted hash should succeed");
-        assert_eq!(original.data_max_len(), validated.data_max_len());
+
+        for encoded in [original.to_crockford(), original.to_base64()] {
+            let validated =
+                Hash::validate(encoded).expect("validation of an uncorrupted hash should succeed");
+
+            assert_eq!(original.data_max_len(), validated.data_max_len());
+        }
     }
 
     #[test]

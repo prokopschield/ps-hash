@@ -1,17 +1,24 @@
-use crate::{error::HashValidationError, Hash, HASH_SIZE};
+use crate::{error::HashValidationError, Hash, HASH_SIZE_CROCKFORD};
+
+/// Replaces the character at `index` with a different one that is valid in
+/// both alphabets, so that corruption tests stay inside the encoded character
+/// set.
+fn corrupt(bytes: &mut [u8], index: usize) {
+    bytes[index] = if bytes[index] == b'A' { b'B' } else { b'A' };
+}
 
 #[test]
 fn test_hash_empty_data() {
     let data = [];
     let result = Hash::hash(data).unwrap();
-    assert_eq!(result.to_string().len(), HASH_SIZE);
+    assert_eq!(result.to_string().len(), HASH_SIZE_CROCKFORD);
 }
 
 #[test]
 fn test_hash_non_empty_data() {
     let data = b"some data to hash";
     let result = Hash::hash(data).unwrap();
-    assert_eq!(result.to_string().len(), HASH_SIZE);
+    assert_eq!(result.to_string().len(), HASH_SIZE_CROCKFORD);
 }
 
 #[test]
@@ -44,9 +51,9 @@ fn test_validate_with_minor_corruption() {
     let data = b"correctable data";
     let original_hash = Hash::hash(data).unwrap();
     let mut corrupted_bytes = original_hash.to_string().into_bytes();
-    // Introduce a small corruption (e.g., flip one bit)
-    let index_to_corrupt = 5;
-    corrupted_bytes[index_to_corrupt] ^= 0b0000_0001;
+
+    corrupt(&mut corrupted_bytes, 5);
+
     let corrupted_hash_str = String::from_utf8(corrupted_bytes).unwrap();
     let validated_hash = Hash::validate(&corrupted_hash_str).unwrap();
     assert_eq!(original_hash, validated_hash);
@@ -54,13 +61,15 @@ fn test_validate_with_minor_corruption() {
 
 #[test]
 fn test_validate_recoverable_corruption() {
-    let data = b"unrecoverable data";
+    let data = b"recoverable data";
     let original_hash = Hash::hash(data).unwrap();
     let mut corrupted_bytes = original_hash.to_string().into_bytes();
-    // Introduce more significant corruption
-    for item in corrupted_bytes.iter_mut().take(9) {
-        *item ^= 0b0000_1111;
+
+    // Three character replacements stay within the seven-byte correction budget.
+    for index in [3, 20, 50] {
+        corrupt(&mut corrupted_bytes, index);
     }
+
     let corrupted_hash_str = String::from_utf8(corrupted_bytes).unwrap();
     let fixed = Hash::validate(&corrupted_hash_str).unwrap();
     assert_eq!(fixed, original_hash);
@@ -71,10 +80,11 @@ fn test_validate_unrecoverable_corruption() {
     let data = b"unrecoverable data";
     let original_hash = Hash::hash(data).unwrap();
     let mut corrupted_bytes = original_hash.to_string().into_bytes();
-    // Introduce more significant corruption
-    for item in corrupted_bytes.iter_mut().take(12) {
-        *item ^= 0b0000_1111;
+
+    for index in 0..30 {
+        corrupt(&mut corrupted_bytes, index);
     }
+
     let corrupted_hash_str = String::from_utf8(corrupted_bytes).unwrap();
     let result = Hash::validate(&corrupted_hash_str);
     assert!(result.is_err());
@@ -85,8 +95,8 @@ fn test_validate_unrecoverable_corruption() {
 }
 
 #[test]
-fn test_validate_invalid_base64() {
-    let invalid_hash = "this_is_not_a_valid_base64_string";
+fn test_validate_invalid_encoding_length() {
+    let invalid_hash = "this_is_not_a_valid_hash_string00";
     let result = Hash::validate(invalid_hash);
     assert!(result.is_err());
     assert!(matches!(
@@ -141,9 +151,10 @@ fn test_partial_eq() {
     assert_eq!(hash_1_a, hash_1_b);
     assert_ne!(hash_1_a, hash2);
 
-    // Test equality with potentially corrupted but still decodable hashes
     let mut corrupted_bytes = hash_1_a.to_string().into_bytes();
-    corrupted_bytes[5] ^= 0b0000_0001;
+
+    corrupt(&mut corrupted_bytes, 5);
+
     let corrupted_hash_str = String::from_utf8(corrupted_bytes).unwrap();
     let validated_corrupted = Hash::validate(&corrupted_hash_str).unwrap();
     assert_eq!(hash_1_a, validated_corrupted);
@@ -175,7 +186,7 @@ fn test_partial_ord() {
 fn test_from_hash_to_array() {
     let data = b"from hash to array";
     let hash = Hash::hash(data).unwrap();
-    let array: [u8; HASH_SIZE] = hash.into();
+    let array: [u8; HASH_SIZE_CROCKFORD] = hash.into();
     assert_eq!(array, *hash.to_string().as_bytes());
 }
 
@@ -211,8 +222,8 @@ fn test_try_from_slice() {
         HashValidationError::InvalidLength(9)
     ));
 
-    let invalid_base64 = "invalid_base64==";
-    let result = Hash::try_from(invalid_base64);
+    let invalid_encoding = "invalid_encoding";
+    let result = Hash::try_from(invalid_encoding);
 
     assert_eq!(result, Err(HashValidationError::InvalidLength(16)));
 }

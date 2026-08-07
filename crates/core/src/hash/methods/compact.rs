@@ -77,4 +77,16 @@ mod tests {
             .expect("recovery from the compact form should succeed");
         assert_eq!(original.data_max_len(), recovered.data_max_len());
     }
+
+    #[test]
+    fn compact_roundtrip_via_validate() {
+        for i in 0..1000 {
+            let input = "X".repeat(i);
+            let original = Hash::hash(&input).expect("hashing should succeed");
+            let recovered = Hash::validate(original.compact())
+                .expect("validation of the compact form should succeed");
+
+            assert_eq!(original, recovered, "roundtrip failed for input length {i}");
+        }
+    }
 }

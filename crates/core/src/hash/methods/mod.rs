@@ -1,6 +1,7 @@
 mod compact;
 mod data_max_len;
 mod digest;
+mod from_parts;
 mod hash;
 mod parity;
 mod to_string;

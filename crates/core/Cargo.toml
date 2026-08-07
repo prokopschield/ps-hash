@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 blake3 = "1.8.5"
 ps-base64 = "0.1.0-7"
+ps-crockford32 = "0.1.0-1"
 ps-ecc = "0.1.0-9"
 ps-pint16 = "0.1.0-5"
 ps-util = "0.1.0-9"

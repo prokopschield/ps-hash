@@ -31,6 +31,7 @@ mod tests {
         assert_eq!(RS.parity(), PARITY);
     }
 
+    /// Pins the correction budget: changing it changes every encoded length.
     #[test]
     fn rs_codec_parity_matches_constant() {
         assert_eq!(RS.parity(), 7);

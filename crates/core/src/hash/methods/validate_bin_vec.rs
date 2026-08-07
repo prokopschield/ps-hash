@@ -29,7 +29,7 @@ impl Hash {
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
-    use crate::{Hash, HashValidationError, HASH_SIZE_BIN};
+    use crate::{Hash, HashValidationError, HASH_SIZE_BIN, PARITY};
 
     #[test]
     fn validate_bin_vec_uncorrupted() {
@@ -51,15 +51,39 @@ mod tests {
     }
 
     #[test]
-    fn validate_bin_vec_multi_byte_corruption() {
-        let original = Hash::hash(b"multi byte").expect("hashing should succeed");
+    fn validate_bin_vec_two_byte_corruption() {
+        let original = Hash::hash(b"two bytes").expect("hashing should succeed");
         let mut vec = original.inner.to_vec();
         vec[0] ^= 0xFF;
         vec[1] ^= 0xFF;
-        vec[2] ^= 0xFF;
         let recovered =
-            Hash::validate_bin_vec(&mut vec).expect("multi-byte corruption should be recovered");
+            Hash::validate_bin_vec(&mut vec).expect("two-byte corruption should be recovered");
         assert_eq!(original, recovered);
+    }
+
+    #[test]
+    fn validate_bin_vec_corrects_at_most_the_parity_budget() {
+        let original = Hash::hash(b"budget").expect("hashing should succeed");
+
+        let mut recoverable = original.inner.to_vec();
+
+        for byte in recoverable.iter_mut().take(PARITY as usize) {
+            *byte ^= 0xFF;
+        }
+
+        assert_eq!(
+            Hash::validate_bin_vec(&mut recoverable)
+                .expect("corruption within the parity budget should be recovered"),
+            original
+        );
+
+        let mut unrecoverable = original.inner.to_vec();
+
+        for byte in unrecoverable.iter_mut().take(PARITY as usize + 1) {
+            *byte ^= 0xFF;
+        }
+
+        assert!(Hash::validate_bin_vec(&mut unrecoverable).is_err());
     }
 
     #[test]

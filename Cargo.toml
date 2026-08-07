@@ -12,7 +12,7 @@ members = ["crates/core"]
 [workspace.package]
 version = "0.1.0-24"
 edition = "2021"
-description = "Generates 64-byte ascii hashes with 256 bits of security."
+description = "Generates 77-character Base32 or 64-character base64url hashes with 128 bits of security."
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
@@ -22,7 +22,6 @@ ps-hash-core = { path = "crates/core", version = "0.1.0-24" }
 ps-hash-core.workspace = true
 
 [dev-dependencies]
-ps-base64 = "0.1.0-7"
 ps-pint16 = "0.1.0-5"
 
 [profile.dev]

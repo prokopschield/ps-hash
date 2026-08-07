@@ -15,13 +15,13 @@ impl From<&Hash> for String {
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
-    use crate::{Hash, HASH_SIZE};
+    use crate::{Hash, HASH_SIZE_CROCKFORD};
 
     #[test]
     fn from_hash_to_string_correct_length() {
         let h = Hash::hash(b"test").expect("hashing should succeed");
         let s: String = h.into();
-        assert_eq!(s.len(), HASH_SIZE);
+        assert_eq!(s.len(), HASH_SIZE_CROCKFORD);
     }
 
     #[test]
@@ -44,7 +44,7 @@ mod tests {
     fn from_hash_ref_to_string_correct_length() {
         let h = Hash::hash(b"ref test").expect("hashing should succeed");
         let s: String = (&h).into();
-        assert_eq!(s.len(), HASH_SIZE);
+        assert_eq!(s.len(), HASH_SIZE_CROCKFORD);
     }
 
     #[test]
@@ -76,7 +76,7 @@ mod tests {
     fn from_hash_ref_preserves_original() {
         let h = Hash::hash(b"preserved").expect("hashing should succeed");
         let _s: String = (&h).into();
-        assert_eq!(h.to_string().len(), HASH_SIZE);
+        assert_eq!(h.to_string().len(), HASH_SIZE_CROCKFORD);
     }
 
     #[test]

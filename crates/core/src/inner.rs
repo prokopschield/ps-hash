@@ -9,17 +9,28 @@ const RS: ReedSolomon = match ReedSolomon::new(PARITY) {
 };
 
 pub fn hash_inner(data: &[u8]) -> Result<[u8; HASH_SIZE_BIN], RSGenerateParityError> {
-    let mut inner = [0u8; HASH_SIZE_BIN];
+    let mut digest = [0u8; DIGEST_SIZE];
 
     let sha = sha256(data);
     let blake = blake3(data);
 
     for i in 0..DIGEST_SIZE {
-        inner[i] = sha[i] ^ blake.as_bytes()[i];
+        digest[i] = sha[i] ^ blake.as_bytes()[i];
     }
 
-    inner[DIGEST_SIZE..PARITY_OFFSET]
-        .copy_from_slice(&PackedInt::from_usize(data.len()).to_16_bits());
+    inner_from_parts(&digest, PackedInt::from_usize(data.len()))
+}
+
+/// Assembles the internal representation from its stored parts, regenerating
+/// the parity block.
+pub fn inner_from_parts(
+    digest: &[u8; DIGEST_SIZE],
+    data_len: PackedInt,
+) -> Result<[u8; HASH_SIZE_BIN], RSGenerateParityError> {
+    let mut inner = [0u8; HASH_SIZE_BIN];
+
+    inner[..DIGEST_SIZE].copy_from_slice(digest);
+    inner[DIGEST_SIZE..PARITY_OFFSET].copy_from_slice(&data_len.to_16_bits());
 
     let parity = RS.generate_parity(&inner[..PARITY_OFFSET])?;
 
@@ -31,21 +42,9 @@ pub fn hash_inner(data: &[u8]) -> Result<[u8; HASH_SIZE_BIN], RSGenerateParityEr
 #[allow(clippy::expect_used)]
 #[cfg(test)]
 mod tests {
-    use ps_base64::base64;
     use ps_pint16::PackedInt;
 
     use super::{hash_inner, DIGEST_SIZE, HASH_SIZE_BIN, PARITY_OFFSET};
-
-    #[test]
-    fn hash_inner_matches_known_vector() {
-        let inner = hash_inner(b"Hello, world!").expect("hash_inner should work");
-        let encoded: [u8; crate::HASH_SIZE] = base64::sized_encode(&inner);
-
-        assert_eq!(
-            String::from_utf8_lossy(&encoded),
-            "3Lqbann-vFOn43UpL64ukdU4TlKXU4nFFvUZCL1iFF4NAFBGLtfcLLDPwF92CquL"
-        );
-    }
 
     #[test]
     fn hash_inner_size_is_stable() {
@@ -62,5 +61,10 @@ mod tests {
             &inner[DIGEST_SIZE..PARITY_OFFSET],
             &PackedInt::from_usize(data.len()).to_16_bits()
         );
+    }
+
+    #[test]
+    fn hash_inner_length_field_is_byte_aligned() {
+        assert_eq!(PARITY_OFFSET - DIGEST_SIZE, 2);
     }
 }

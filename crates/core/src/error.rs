@@ -8,6 +8,8 @@ use thiserror::Error;
 pub enum HashError {
     #[error(transparent)]
     RSGenerateParityError(#[from] RSGenerateParityError),
+    #[error("The digest is all zeros")]
+    ZeroDigest,
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]

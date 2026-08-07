@@ -1,12 +1,11 @@
 use std::fmt::{Debug, Display};
 
-use ps_base64::base64;
-
 use super::super::Hash;
 
 impl Display for Hash {
+    /// Writes the canonical Crockford Base32 representation.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        base64::encode_into(&self.inner, f)
+        ps_crockford32::encode_into(&self.inner, f)
     }
 }
 
@@ -19,13 +18,20 @@ impl Debug for Hash {
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
-    use crate::{Hash, HASH_SIZE};
+    use crate::{Hash, HASH_SIZE_CROCKFORD};
 
     #[test]
     fn display_correct_length() {
         let h = Hash::hash(b"test").expect("hashing should succeed");
         let s = format!("{h}");
-        assert_eq!(s.len(), HASH_SIZE);
+        assert_eq!(s.len(), HASH_SIZE_CROCKFORD);
+    }
+
+    #[test]
+    fn display_matches_to_crockford() {
+        let h = Hash::hash(b"matches").expect("hashing should succeed");
+
+        assert_eq!(format!("{h}"), h.to_crockford());
     }
 
     #[test]
@@ -57,7 +63,7 @@ mod tests {
     fn debug_correct_length() {
         let h = Hash::hash(b"debug").expect("hashing should succeed");
         let s = format!("{h:?}");
-        assert_eq!(s.len(), HASH_SIZE);
+        assert_eq!(s.len(), HASH_SIZE_CROCKFORD);
     }
 
     #[test]

@@ -13,7 +13,7 @@ impl Hash {
 #[cfg(test)]
 #[allow(clippy::expect_used)]
 mod tests {
-    use crate::{Hash, HASH_SIZE, HASH_SIZE_BIN};
+    use crate::{Hash, HASH_SIZE_BIN, HASH_SIZE_CROCKFORD};
 
     #[test]
     fn hash_empty_data() {
@@ -58,7 +58,7 @@ mod tests {
     #[test]
     fn hash_to_string_has_correct_size() {
         let h = Hash::hash(b"test").expect("hashing should succeed");
-        assert_eq!(h.to_string().len(), HASH_SIZE);
+        assert_eq!(h.to_string().len(), HASH_SIZE_CROCKFORD);
     }
 
     #[test]

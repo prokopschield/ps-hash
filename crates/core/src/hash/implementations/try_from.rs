@@ -54,9 +54,11 @@ mod tests {
     fn try_from_slice_corrects_corruption() {
         let original = Hash::hash(b"corruption").expect("hashing should succeed");
         let mut bytes = original.to_string().into_bytes();
-        bytes[5] ^= 0x01;
+        // Replace with a character that is valid in both alphabets, so that
+        // the corruption stays inside the encoded character set.
+        bytes[5] = if bytes[5] == b'A' { b'B' } else { b'A' };
         let recovered = Hash::try_from(bytes.as_slice())
-            .expect("conversion should recover single-bit corruption");
+            .expect("conversion should recover single-character corruption");
         assert_eq!(original, recovered);
     }
 
@@ -91,10 +93,12 @@ mod tests {
     fn try_from_str_corrects_corruption() {
         let original = Hash::hash(b"str corruption").expect("hashing should succeed");
         let mut bytes = original.to_string().into_bytes();
-        bytes[5] ^= 0x01;
+        // Replace with a character that is valid in both alphabets, so that
+        // the corruption stays inside the encoded character set.
+        bytes[5] = if bytes[5] == b'A' { b'B' } else { b'A' };
         let corrupted = String::from_utf8(bytes).expect("corrupted bytes should be valid UTF-8");
         let recovered = Hash::try_from(corrupted.as_str())
-            .expect("conversion should recover single-bit corruption");
+            .expect("conversion should recover single-character corruption");
         assert_eq!(original, recovered);
     }
 
@@ -122,28 +126,27 @@ mod tests {
         assert_eq!(original, recovered);
     }
 
-    /// `TryFrom<&[u8]>` delegates to `validate()`, which accepts both base64-encoded
-    /// and raw binary representations. This test documents that the raw binary
-    /// inner representation is a valid input, distinct from base64-encoded bytes.
+    /// `TryFrom<&[u8]>` delegates to `validate()`, which accepts both encoded
+    /// and raw binary representations.
     #[test]
-    fn try_from_raw_binary_differs_from_base64_encoded() {
+    fn try_from_raw_binary_differs_from_crockford_encoded() {
         let original = Hash::hash(b"encoding test").expect("hashing should succeed");
 
-        let base64_bytes = original.to_string().into_bytes();
+        let crockford_bytes = original.to_string().into_bytes();
         let raw_binary = original.inner.as_slice();
 
         assert_ne!(
-            base64_bytes.as_slice(),
+            crockford_bytes.as_slice(),
             raw_binary,
-            "base64-encoded and raw binary representations must differ"
+            "Crockford-encoded and raw binary representations must differ"
         );
 
-        let from_base64 = Hash::try_from(base64_bytes.as_slice())
-            .expect("conversion from base64 bytes should succeed");
+        let from_crockford = Hash::try_from(crockford_bytes.as_slice())
+            .expect("conversion from Crockford bytes should succeed");
         let from_raw =
             Hash::try_from(raw_binary).expect("conversion from raw binary should succeed");
 
-        assert_eq!(from_base64, original);
+        assert_eq!(from_crockford, original);
         assert_eq!(from_raw, original);
     }
 }
