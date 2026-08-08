@@ -3,6 +3,7 @@ name = "ps-hash"
 version.workspace = true
 edition.workspace = true
 description.workspace = true
+repository.workspace = true
 license.workspace = true
 
 [workspace]
@@ -13,6 +14,7 @@ members = ["crates/core", "crates/macros"]
 version = "0.1.0-25"
 edition = "2021"
 description = "Generates 77-character Base32 or 64-character base64url hashes with 128 bits of security."
+repository = "https://github.com/prokopschield/ps-hash"
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]

@@ -3,6 +3,7 @@ name = "ps-hash-core"
 version.workspace = true
 edition.workspace = true
 description = "Core hashing primitives for ps-hash."
+repository.workspace = true
 license.workspace = true
 
 [dependencies]
