@@ -6,6 +6,7 @@ pub use ps_hash_core::{
     HASH_SIZE_COMPACT, HASH_SIZE_CROCKFORD, MIN_RECOVERABLE_BASE64, MIN_RECOVERABLE_BIN,
     MIN_RECOVERABLE_CROCKFORD, PARITY, PARITY_OFFSET, PARITY_SIZE, RS, SIZE_SIZE,
 };
+pub use ps_hash_macros::hash;
 
 #[cfg(test)]
 pub mod tests;

@@ -7,19 +7,21 @@ license.workspace = true
 
 [workspace]
 resolver = "2"
-members = ["crates/core"]
+members = ["crates/core", "crates/macros"]
 
 [workspace.package]
-version = "0.1.0-24"
+version = "0.1.0-25"
 edition = "2021"
 description = "Generates 77-character Base32 or 64-character base64url hashes with 128 bits of security."
 license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
-ps-hash-core = { path = "crates/core", version = "0.1.0-24" }
+ps-hash-core = { path = "crates/core", version = "0.1.0-25" }
+ps-hash-macros = { path = "crates/macros", version = "0.1.0-25" }
 
 [dependencies]
 ps-hash-core.workspace = true
+ps-hash-macros.workspace = true
 
 [dev-dependencies]
 ps-pint16 = "0.1.0-5"
